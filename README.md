@@ -28,10 +28,14 @@ http://vjoystick.sourceforge.net/site/index.php/download-a-install/download    <
 This project serves as example on how to use the SCvJoyServer.<br>
 There are 5 different Tabs which provide context based access to functions.<br>
 <br>
+See screenshots from an iPad2:<br>
+SCRemoteServer/screenshots/IMG_0033.PNG<br>
+SCRemoteServer/screenshots/IMG_0034.PNG<br>
+SCRemoteServer/screenshots/IMG_0035.PNG<br>
+SCRemoteServer/screenshots/IMG_0036.PNG<br>
+SCRemoteServer/screenshots/IMG_0037.PNG<br>
 <br>
-I found using the UwAmp Zip package, an all inclusive WebServer, the fastest and least intrusive way<br>
-to run a web server supporting PHP on a Win desktop PC<br>
-https://www.uwamp.com<br>
+For more information about how to use it - see doc folder<br>
 <br>
 You may map the Virtual Joystick like any real one into SC by using e.g. SCJMapper-V2<br>
 <br>
