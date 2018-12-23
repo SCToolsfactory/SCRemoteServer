@@ -29,11 +29,11 @@ This project serves as example on how to use the SCvJoyServer.<br>
 There are 5 different Tabs which provide context based access to functions.<br>
 <br>
 See screenshots from an iPad2:<br>
-SCRemoteServer/screenshots/IMG_0033.PNG<br>
-SCRemoteServer/screenshots/IMG_0034.PNG<br>
-SCRemoteServer/screenshots/IMG_0035.PNG<br>
-SCRemoteServer/screenshots/IMG_0036.PNG<br>
-SCRemoteServer/screenshots/IMG_0037.PNG<br>
+https://github.com/SCToolsfactory/SCRemoteServer/blob/master/screenshots/IMG_0033.PNG<br>
+https://github.com/SCToolsfactory/SCRemoteServer/blob/master/screenshots/IMG_0034.PNG<br>
+https://github.com/SCToolsfactory/SCRemoteServer/blob/master/screenshots/IMG_0035.PNG<br>
+https://github.com/SCToolsfactory/SCRemoteServer/blob/master/screenshots/IMG_0036.PNG<br>
+https://github.com/SCToolsfactory/SCRemoteServer/blob/master/screenshots/IMG_0037.PNG<br>
 <br>
 For more information about how to use it - see doc folder<br>
 <br>
