@@ -9,30 +9,28 @@
     <script src="pages.js" type="text/javascript"></script>
 
     <script>
-    // we assume here that pages.js creates the page objects:
-    // page_1_obj, page_2_obj, page_3_obj, page_4_obj, page_5_obj
-
     var expandedPage = null; // carries the current page object ref
-    
+    var pages = null;
+
     // Basic init, make the first page active
     function init()
     {
+      // we assume here that pages.js creates the page objects:
+      // page_1_obj, page_2_obj, page_3_obj, page_4_obj, page_5_obj
+
+      // helper to access via array 1..n (element 0 is not used)
+      pages = [null, page_1_obj, page_2_obj, page_3_obj, page_4_obj, page_5_obj];
+
       // create and show page 1
-      page_1_obj.Init("pageCanvas");
-      expandedPage = page_1_obj;
+      pages[1].Init("pageCanvas"); // uses the canvas from the HTML element below
+      expandedPage = pages[1];
 
       // add tab text from page.PageName
-      var imgText = document.getElementById("imgtext1");
-      imgText.innerHTML = page_1_obj.PageName;
-      imgText = document.getElementById("imgtext2");
-      imgText.innerHTML = page_2_obj.PageName;
-      imgText = document.getElementById("imgtext3");
-      imgText.innerHTML = page_3_obj.PageName;
-      imgText = document.getElementById("imgtext4");
-      imgText.innerHTML = page_4_obj.PageName;
-      imgText = document.getElementById("imgtext5");
-      imgText.innerHTML = page_5_obj.PageName;
-
+      var i=0;
+      for (i=1; i<pages.length; i++){
+        var imgText = document.getElementById("imgtext" + i.toString() );
+        imgText.innerHTML = pages[i].PageName;
+      }
     }
 
     // Tab switcher
@@ -51,23 +49,23 @@
 <!-- The columns, CSS splits into 20% i.e. 5 cols -->
 <div class="row">
   <div class="column">
-    <img src="images/page_1.png" alt="Page 1" style="width:100%" onclick="ExpandPage(page_1_obj);">
+    <img src="images/page_1.png" alt="Page 1" style="width:100%" onclick="ExpandPage(pages[1]);">
     <div class="imgtext" id="imgtext1"></div>  
   </div>
   <div class="column">
-    <img src="images/page_2.png" alt="Page 2" style="width:100%" onclick="ExpandPage(page_2_obj);">
+    <img src="images/page_2.png" alt="Page 2" style="width:100%" onclick="ExpandPage(pages[2]);">
     <div class="imgtext" id="imgtext2"></div>  
   </div>
   <div class="column">
-    <img src="images/page_3.png" alt="Page 3" style="width:100%" onclick="ExpandPage(page_3_obj);">
+    <img src="images/page_3.png" alt="Page 3" style="width:100%" onclick="ExpandPage(pages[3]);">
     <div class="imgtext" id="imgtext3"></div>  
   </div>
   <div class="column">
-    <img src="images/page_4.png" alt="Page 4" style="width:100%" onclick="ExpandPage(page_4_obj);">
+    <img src="images/page_4.png" alt="Page 4" style="width:100%" onclick="ExpandPage(pages[4]);">
     <div class="imgtext" id="imgtext4"></div>  
   </div>
   <div class="column">
-    <img src="images/page_5.png" alt="Page 5" style="width:100%" onclick="ExpandPage(page_5_obj);">
+    <img src="images/page_5.png" alt="Page 5" style="width:100%" onclick="ExpandPage(pages[5]);">
     <div class="imgtext" id="imgtext5"></div>  
   </div>
 </div>
@@ -80,8 +78,8 @@
 </div>
 
     
-<div id="demo"  style="background-color:lightblue">
-<h3 foreground:white >DEBUG Information only</h3>
+<div id="debug"  style="background-color:lightblue">
+DEBUG Information only
 </div>
 
 </body>

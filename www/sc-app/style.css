@@ -13,7 +13,7 @@ body {
   float: left;
   width: 20%;
   padding: 4px 4px 0px;
-  background: gray;
+  background: rgb(11, 0, 59);
 }
 
 /* Style the images inside the grid */
@@ -43,9 +43,9 @@ body {
 /* Expanding image text */
 .imgtext {
   position: relative;
+  text-align: center;
   bottom: 2px;
-  left: 2px;
-  color: lightgray;
+  color: lightskyblue;
   font-size: 16px;
 }
 

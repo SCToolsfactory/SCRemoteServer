@@ -1,228 +1,314 @@
 "use strict";
-// V 1.0
+// V 1.1
 // Base for the Page handling
 // !!!! Everything changed here affects all pages 
 //
 
 // Base consts for the Target
+
+// Key and Button activation (Key expects Values of KV_.., Buttons 1..max)
 const ItemTypeKey = "key", ItemTypeButton = "btn";
+
+// Axis and RotAxis and Slider activation (accepts values from 0..1000, where 500 is the midpoint)
+const ItemTypeXaxis = "axX", ItemTypeYaxis = "axY", ItemTypeZaxis = "axZ";
+const ItemTypeRXaxis = "axRX", ItemTypeRYaxis = "axRY", ItemTypeRZaxis = "axRZ";
+const ItemTypeSL1 = "sl1",ItemTypeSL2 = "sl2";
+
+// Keystroke modifiers 
 const ItemModNone = "n", ItemModLCtrl = "lc", ItemModRCtrl = "rc", ItemModLAlt = "la", ItemModRAlt = "ra";
 
+// Debug support
+//  Find the DEBUG only comment and comment the complete line to remove
 
-// An object that defines a hit target
-function Target(name, x, y, d, type, code, mod)
-{
-  // properties
-  this.name = name;   // Unique ID
-  this.x = x;         // Hit Target Center X
-  this.y = y;         // Hit Target Center X
-  this.d = d;         // Hit Target Diameter
-  this.type = type;   // ItemType..
-  this.code = code;   // a number
-  this.mod = mod;     // ItemMod
-  
-  // internal var
-  this.shape = null;
-  this.pressed = false;
-}
 
-// An object that defines and handles the Page_Base  
-function Page_Base_obj (pageName, backgroundImageUri, items)
-{
-  this.PageName = pageName;
-  this.BackgroundImageUri = backgroundImageUri;
-  this.BackgroundImg = null;
-  this.Stage = null;
-  
-  this.Items = items;
-  
-}
+// *********************************************************************
+// Target  Object
 
 // internal use by Page_Base
 const B_UPalpha = 0.1,  B_DOWNalpha = 0.4; // transparency when released and when pressed
 const ItemModePress = "p", ItemModeRelease = "r", ItemModeTap = "t";
 
-
-// Basic initialization of this page
-Page_Base_obj.prototype.Init = function(canvas)
-{
-  var self = this;
-  this.Stage = new createjs.Stage(canvas);
-  // to get onMouseOver & onMouseOut events, we need to enable them on the stage:
-  this.Stage.enableMouseOver();
-  createjs.Touch.enable(this.Stage, true); // touch device support... - must disable when stage is no longer used
-
-  this.BackgroundImg = new Image();
-  this.BackgroundImg.onload = function() {
-      var bitmap = new createjs.Bitmap(self.BackgroundImg);
-      self.Stage.addChildAt(bitmap, 0); // back
-      self.Stage.update();
+// An object that defines a hit target
+class Target {
+  constructor(name, x, y, d, type, code, mod) {
+    // properties
+    this.name = name; // Unique ID
+    this.x = x; // Hit Target Center X
+    this.y = y; // Hit Target Center X
+    this.d = d; // Hit Target Diameter
+    this.type = type; // ItemType..
+    this.code = code; // a number
+    this.mod = mod; // ItemMod
+    // internal var
+    this.shape = null;
+    this.pressed = false;
   }
-  this.BackgroundImg.src = this.BackgroundImageUri;
 
-  this.Init_closure(); // do everything after the background is loaded
-  
-  this.Stage.update();
-}
+  // build and return a string like  '{"K":{""Modifier":"rc", VKcode":113, "Mode":"p"}}';
+  // IN: the command mode string (ItemModeXY)
+  // RETURNS: a command string
+  GetCommand(mode) {
+    var cmd = {"type":ItemModeTap, "str":""}; // default type is Tap i.e. one action on click or press
 
-// load shapes onto the background
-Page_Base_obj.prototype.Init_closure = function() 
-{
-  for (var i = 0; i < this.Items.length; ++i) {
-    var shape = this.GetShape( i );
-    this.Stage.addChild( shape );
-    // add a handler for all the events we're interested in:
-    shape.on("mousedown", this.Items_HandleEvent, null, false, this );
-    shape.on("pressup", this.Items_HandleEvent, null, false, this );
-    shape.on("mouseout", this.Items_HandleEvent, null, false, this );
-    //shape.on("click", this.Items_HandleEvent);
-    //shape.on("dblclick", this.Items_HandleEvent);
-  }
-}
-
-
-// handles the delayed image loading from the server
-Page_Base_obj.prototype.Dispose = function() {
-  createjs.Touch.disable(this.Stage);
-  this.Stage.removeAllEventListeners();
-  this.Stage.removeAllChildren();
-  for (var i = 0; i < this.Items.length; ++i) {
-    if ( this.Items[i].shape != null ) {
-      this.Items[i].shape.removeAllEventListeners();
-      this.Items[i].shape = null;
+    if (this.type === ItemTypeKey) {
+      cmd.type = ItemModePress; // has press and release action
+      cmd.str = '{"K":{"Modifier":"' + this.mod + '"';
+      cmd.str += ',"VKcode":' + this.code.toString();
+      cmd.str += ',"Mode":"' + mode + '"';
+      cmd.str += '}}';
     }
-  }
-  this.Stage = null;
-  this.BackgroundImg = null;
-}
-
-////////////
-
-// Get an item by name
-// IN: itemName - a string
-// RETURNS: an Item or null
-Page_Base_obj.prototype.GetItemByName = function(itemName)
-{
-  for (var i = 0; i < this.Items.length; ++i) {
-    if ( this.Items[i].name === itemName ) {
-      return this.Items[i];
+    else if (this.type === ItemTypeButton) {
+      cmd.type = ItemModePress; // has press and release action
+      cmd.str = '{"B":{"Modifier":"' + this.mod + '"'; // modifier is not yet in the command but will be ignored..
+      cmd.str += ',"Index":' + this.code.toString();
+      cmd.str += ',"Mode":"' + mode + '"';
+      cmd.str += '}}';
     }
-  }
-  return null;
-}
-
-// build and return a string like  '{"K":{""Modifier":"rc", VKcode":113, "Mode":"p"}}';
-// IN: itemIndex 0... n
-// IN: the command mode string (ItemModeXY)
-// RETURNS: a command string
-Page_Base_obj.prototype.GetCommand = function(itemIndex, mode) 
-{
-  if ( (itemIndex>=0) && (itemIndex<this.Items.length) ) {
-    var cmd = "";
-    if ( this.Items[itemIndex].type === ItemTypeKey ) {
-      cmd = '{"K":{"Modifier":"' + this.Items[itemIndex].mod + '"';
-      cmd +=',"VKcode":' + this.Items[itemIndex].code.toString();
-      cmd += ',"Mode":"' + mode + '"';
-      cmd += '}}';
+    // Axis 
+    else if (this.type === ItemTypeXaxis) {
+      cmd.str = '{"A":{"Direction":"X"';
+      cmd.str += ',"Value":' + this.code.toString();
+      cmd.str += '}}';
     }
-    else if ( this.Items[itemIndex].type === ItemTypeButton ) {
-      cmd = '{"B":{"Modifier":"' + this.Items[itemIndex].mod + '"'; // modifier is not yet in the command but will be ignored..
-      cmd +=',"Index":' + this.Items[itemIndex].code.toString();
-      cmd += ',"Mode":"' + mode + '"';
-      cmd += '}}';
+    else if (this.type === ItemTypeYaxis) {
+      cmd.str = '{"A":{"Direction":"Y"';
+      cmd.str += ',"Value":' + this.code.toString();
+      cmd.str += '}}';
+    }
+    else if (this.type === ItemTypeZaxis) {
+      cmd.str = '{"A":{"Direction":"Z"';
+      cmd.str += ',"Value":' + this.code.toString();
+      cmd.str += '}}';
+    }
+    // Rot Axis 
+    else if (this.type === ItemTypeRXaxis) {
+      cmd.str = '{"R":{"Direction":"X"';
+      cmd.str += ',"Value":' + this.code.toString();
+      cmd.str += '}}';
+    }
+    else if (this.type === ItemTypeRYaxis) {
+      cmd.str = '{"R":{"Direction":"Y"';
+      cmd.str += ',"Value":' + this.code.toString();
+      cmd.str += '}}';
+    }
+    else if (this.type === ItemTypeRZaxis) {
+      cmd.str = '{"R":{"Direction":"Z"';
+      cmd.str += ',"Value":' + this.code.toString();
+      cmd.str += '}}';
+    }
+    // Sliders 
+    else if (this.type === ItemTypeSL1) {
+      cmd.str = '{"S":{"Index":1';
+      cmd.str += ',"Value":' + this.code.toString();
+      cmd.str += '}}';
+    }
+    else if (this.type === ItemTypeSL2) {
+      cmd.str = '{"S":{"Index":2';
+      cmd.str += ',"Value":' + this.code.toString();
+      cmd.str += '}}';
     }
     return cmd;
   }
-  return "";
-}
 
-// build and return a string like  '{"K":{""Modifier":"rc", VKcode":113, "Mode":"p"}}';
-// IN: itemName - a string
-// IN: the command mode string (ItemModeXY)
-// RETURNS: a command string
-Page_Base_obj.prototype.GetCommandByName = function (itemName, mode) 
-{
-  for (var i = 0; i < this.Items.length; ++i) {
-    if ( this.Items[i].name === itemName ) {
-      return this.GetCommand( i, mode );
+  // creates the shape if needed and returns it
+  // RETURNS: a createjs.Shape or null
+  GetShape() {
+    if (this.shape === null) {
+      var circle = new createjs.Shape();
+      circle.graphics.beginFill("white").drawCircle(0, 0, this.d / 2);
+      circle.x = this.x;
+      circle.y = this.y;
+      circle.alpha = B_UPalpha;
+      circle.name = this.name;
+      this.shape = circle;
+    }
+    return this.shape;
+  }
+
+  // Disposes all items from the page
+  Dispose() {
+    if (this.shape != null) {
+      this.shape.removeAllEventListeners();
+      this.shape = null;
     }
   }
-  return "";
-}
 
-// creates the shape if needed and returns it
-// IN: itemIndex 0... n
-// RETURNS: a createjs.Shape or null
-Page_Base_obj.prototype.GetShape = function(itemIndex)
-{
-  if ( (itemIndex>=0) && (itemIndex<this.Items.length) ) {
-      if ( this.Items[itemIndex].shape === null ) {
-        var circle = new createjs.Shape();
-        circle.graphics.beginFill("white").drawCircle(0, 0, this.Items[itemIndex].d/2);
-        circle.x = this.Items[itemIndex].x;
-        circle.y = this.Items[itemIndex].y;
-        circle.alpha = B_UPalpha;
-        circle.name = this.Items[itemIndex].name;
-        this.Items[itemIndex].shape = circle;
-      }
-      return this.Items[itemIndex].shape;
-  }
-  return null;
-}
+  // exec the command, depends on event type
+  // IN: a createjs Event
+  Target_HandleEvent(evt) {
+    if (evt.type == "mousedown") {
+      this.shape.alpha = B_DOWNalpha;
+      this.pressed = true;
+      var cmd = this.GetCommand(ItemModePress);
+      var xmlhttp = new XMLHttpRequest();
+      xmlhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          document.getElementById("debug").innerHTML = this.responseText; // DEBUG ONLY
+        }
+      };
+      xmlhttp.open("GET", 'calludp.php?msg=' + cmd.str + '&ip=' + IP + '&p=' + PORT.toString(), true);
+      xmlhttp.send();
+    }
+    if ((evt.type == "pressup") || (this.pressed && (evt.type == "mouseout"))) {
+      this.shape.alpha = B_UPalpha;
+      this.pressed = false;
+      var cmd = this.GetCommand(ItemModeRelease);
+      if ( cmd.type === "t") return; // tap types don't have a release action 
 
-// creates the shape if needed and returns it
-// IN: itemName - a string
-// RETURNS: a createjs.Shape or null
-Page_Base_obj.prototype.GetShapeByName = function(itemName)
-{
-  for (var i = 0; i < this.Items.length; ++i) {
-    if ( this.Items[i].name === itemName ) {
-      return this.GetShape( i );
+      var xmlhttp = new XMLHttpRequest();
+      xmlhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          document.getElementById("debug").innerHTML = this.responseText; // DEBUG ONLY
+        }
+      };
+      xmlhttp.open("GET", 'calludp.php?msg=' + cmd.str + '&ip=' + IP + '&p=' + PORT.toString(), true);
+      xmlhttp.send();
     }
   }
-  return null;
-}
+}// class
 
-// iterates the items and exec the command if required
-// this is called out of context ( another This issue..., parameter self carries the object context )
-// IN: a createjs Event
-Page_Base_obj.prototype.Items_HandleEvent = function(evt, self) 
-{
-  for (var i = 0; i < self.Items.length; ++i) {
-    // check all items for the Event raising one
-    if ( evt.target.name === self.Items[i].name ) {
-      if ( evt.type == "mousedown" ) {
-        self.Items[i].shape.alpha = B_DOWNalpha;
-        self.Items[i].pressed = true;
-        var xmlhttp = new XMLHttpRequest();
-        xmlhttp.onreadystatechange = function() {
-          if (this.readyState == 4 && this.status == 200) {
-            document.getElementById("demo").innerHTML = this.responseText; // DEBUG ONLY
-          }
-        };
-        xmlhttp.open("GET", 'calludp.php?msg=' + self.GetCommand(i, ItemModePress)
-                                               + '&ip=' + IP
-                                               + '&p=' + PORT.toString(), true);
-        xmlhttp.send();
-      }
-      
-      if ( ( evt.type == "pressup" ) || ( self.Items[i].pressed && ( evt.type == "mouseout" ) ) ) {
-        self.Items[i].shape.alpha = B_UPalpha;
-        self.Items[i].pressed = false;
-        var xmlhttp = new XMLHttpRequest();
-        xmlhttp.onreadystatechange = function() {
-          if (this.readyState == 4 && this.status == 200) {
-            document.getElementById("demo").innerHTML = this.responseText; // DEBUG ONLY
-          }
-        };
-        xmlhttp.open("GET", "calludp.php?msg=" + self.GetCommand(i, ItemModeRelease)
-                                               + '&ip=' + IP
-                                               + '&p=' + PORT.toString(), true);
-        xmlhttp.send();
-      }
-      // GUI update
+
+
+// *********************************************************************
+// Page_Base_obj  Object
+// An object that defines and handles the Page_Base  
+class Page_Base_obj {
+  constructor(pageName, backgroundImageUri, items) {
+    this.PageName = pageName;
+    this.BackgroundImageUri = backgroundImageUri;
+    this.BackgroundImg = null;
+    this.Stage = null;
+    this.Items = items;
+  }
+
+  // Basic initialization of this page
+  Init(canvas) {
+    var self = this; // maintain this context for the callback
+    this.Stage = new createjs.Stage(canvas);
+    // to get onMouseOver & onMouseOut events, we need to enable them on the stage:
+    this.Stage.enableMouseOver();
+    createjs.Touch.enable(this.Stage, true); // touch device support... - must disable when stage is no longer used
+    this.BackgroundImg = new Image();
+    this.BackgroundImg.onload = function () {
+      // called when loading image has completed (use self to access page object elements)
+      var bitmap = new createjs.Bitmap(self.BackgroundImg);
+      self.Stage.addChildAt(bitmap, 0); // alloc as background image
       self.Stage.update();
-    }  
-  }//for all
-}
+    };
+    this.BackgroundImg.src = this.BackgroundImageUri;
+    this.Init_closure(); // do everything after the background is loaded
+    // GUI update
+    this.Stage.update();
+  }
+
+  // load shapes onto the background
+  Init_closure() {
+    for (var i = 0; i < this.Items.length; ++i) {
+      var shape = this.GetShape(i);
+      this.Stage.addChild(shape);
+      // add a handler for all the events we're interested in:
+      shape.on("mousedown", this.Items_HandleEvent, null, false, this);
+      shape.on("pressup", this.Items_HandleEvent, null, false, this);
+      shape.on("mouseout", this.Items_HandleEvent, null, false, this);
+      //shape.on("click", this.Items_HandleEvent, null, false, this );
+      //shape.on("dblclick", this.Items_HandleEvent, null, false, this );
+    }
+  }
+
+  // Disposes all runtime allocated items from the page
+  Dispose() {
+    createjs.Touch.disable(this.Stage); // according to documentation..
+    this.Stage.removeAllEventListeners();
+    this.Stage.removeAllChildren();
+    for (var i = 0; i < this.Items.length; ++i) {
+      this.Items[i].Dispose(); // remove shapes..
+    }
+    this.Stage = null;
+    this.BackgroundImg = null;
+  }
+
+  // Get an item by name
+  // IN: itemName - a string
+  // RETURNS: an Item or null
+  GetItemByName(itemName) {
+    for (var i = 0; i < this.Items.length; ++i) {
+      if (this.Items[i].name === itemName) {
+        return this.Items[i];
+      }
+    }
+    return null;
+  }
+
+  // build and return a string like  '{"K":{""Modifier":"rc", VKcode":113, "Mode":"p"}}';
+  // IN: itemIndex 0... n
+  // IN: the command mode string (ItemModeXY)
+  // RETURNS: a command string
+  GetCommand(itemIndex, mode) {
+    if ((itemIndex >= 0) && (itemIndex < this.Items.length)) {
+      var cmd = this.Items[itemIndex].GetCommand(mode);
+      return cmd;
+    }
+    return "";
+  }
+
+  // build and return a string like  '{"K":{""Modifier":"rc", VKcode":113, "Mode":"p"}}';
+  // IN: itemName - a string
+  // IN: the command mode string (ItemModeXY)
+  // RETURNS: a command string
+  GetCommandByName(itemName, mode) {
+    for (var i = 0; i < this.Items.length; ++i) {
+      if (this.Items[i].name === itemName) {
+        return this.GetCommand(i, mode);
+      }
+    }
+    return "";
+  }
+
+  // creates the shape if needed and returns it
+  // IN: itemIndex 0... n
+  // RETURNS: a createjs.Shape or null
+  GetShape(itemIndex) {
+    if ((itemIndex >= 0) && (itemIndex < this.Items.length)) {
+      return this.Items[itemIndex].GetShape();
+    }
+    return null;
+  }
+
+  // creates the shape if needed and returns it
+  // IN: itemName - a string
+  // RETURNS: a createjs.Shape or null
+  GetShapeByName(itemName) {
+    for (var i = 0; i < this.Items.length; ++i) {
+      if (this.Items[i].name === itemName) {
+        return this.GetShape(i);
+      }
+    }
+    return null;
+  }
+
+  // iterates the items and exec the command if required
+  // this is called out of context ( another This issue..., parameter self carries the page context )
+  // IN: a createjs Event
+  // IN: the page context
+  Items_HandleEvent(evt, self) {
+    for (var i = 0; i < self.Items.length; ++i) {
+      // check all items for the Event raising one
+      if (evt.target.name === self.Items[i].name) {
+        self.Items[i].Target_HandleEvent(evt);
+        // GUI update for changed target shape
+        self.Stage.update();
+      }
+    } //for all
+  }
+}// class
+
+
+
+
+
+
+
+
+
+
 

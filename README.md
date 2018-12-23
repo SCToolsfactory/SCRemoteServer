@@ -4,12 +4,13 @@ SCremoteServer V 0.1<br>
 SC Remote Interaction Web Server <br>
 <br>
 A small Web Site that utilizes the SCvJoyServer to issue keystrokes and vJoy commands.<br>
-(SC) refers to StarCitzen which is the primary intent of this project, but it may <br>
+(SC) refers to the StarCitzen game which is the primary intent of this project, but it may <br>
 be used for other purposes as well.<br>
 <br>
 Uses the UDP protocol to supply commands issued from the remote Web Browser<br>
 which may run on a tablet or similar interactive device appart from the game PC<br>
 It issues a Key/Button _down_ as long as pressing or clicking and holding the mouse on the target.<br>
+It can also issue vJoy Axis or Slider input with a distinct value (no analog slider so far..)<br>
 <br>
 The server does not store or indicate states of toggles.<br>
 I found that the game still looses keystrokes once in a while and then the<br>
@@ -19,7 +20,7 @@ Uses: easelJS library - see license file
 <br>
 Note: <br>
 You have to install the SCvJoyServer which is available here:<br>
-https://github.com/SCToolsfactory/SCJoyServer
+https://github.com/SCToolsfactory/SCJoyServer/releases
 <br>
 You have to install the vJoy (V 2.1) driver to make use of Joystick Buttons.<br>
 The driver is not available here but you may use this link.<br>
