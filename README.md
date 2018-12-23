@@ -37,6 +37,7 @@ https://github.com/SCToolsfactory/SCRemoteServer/blob/master/screenshots/IMG_003
 https://github.com/SCToolsfactory/SCRemoteServer/blob/master/screenshots/IMG_0037.PNG<br>
 <br>
 For more information about how to use it - see doc folder<br>
+https://github.com/SCToolsfactory/SCRemoteServer/blob/master/doc/SCRemoteServer.pdf<br>
 <br>
 You may map the Virtual Joystick like any real one into SC by using e.g. SCJMapper-V2<br>
 <br>
