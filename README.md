@@ -12,8 +12,8 @@ which may run on a tablet or similar interactive device appart from the game PC<
 It issues a Key/Button _down_ as long as pressing or clicking and holding the mouse on the target.<br>
 It can also issue vJoy Axis or Slider input with a distinct value (no analog slider so far..)<br>
 <br>
-The server does not store or indicate states of toggles.<br>
-I found that the game still looses keystrokes once in a while and then the<br>
+The server can store or indicate states of toggles.<br>
+However I found that the game still looses keystrokes once in a while and then the<br>
 toggle persistence is not helpful but even confuses the user...<br>
 <br>
 Uses: easelJS library - see license file

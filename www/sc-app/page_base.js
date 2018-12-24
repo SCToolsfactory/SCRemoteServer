@@ -14,8 +14,10 @@ const ItemTypeXaxis = "axX", ItemTypeYaxis = "axY", ItemTypeZaxis = "axZ";
 const ItemTypeRXaxis = "axRX", ItemTypeRYaxis = "axRY", ItemTypeRZaxis = "axRZ";
 const ItemTypeSL1 = "sl1",ItemTypeSL2 = "sl2";
 
+// Item modes
+const ItemModeTogOn = "ton", ItemModeTogOff = "toff", ItemModePR = "pr", ItemModeVal = "val";
 // Keystroke modifiers 
-const ItemModNone = "n", ItemModLCtrl = "lc", ItemModRCtrl = "rc", ItemModLAlt = "la", ItemModRAlt = "ra";
+const ItemKModNone = "n", ItemKModLCtrl = "lc", ItemKModRCtrl = "rc", ItemKModLAlt = "la", ItemKModRAlt = "ra";
 
 // Debug support
 //  Find the DEBUG only comment and comment the complete line to remove
@@ -25,41 +27,52 @@ const ItemModNone = "n", ItemModLCtrl = "lc", ItemModRCtrl = "rc", ItemModLAlt =
 // Target  Object
 
 // internal use by Page_Base
-const B_UPalpha = 0.1,  B_DOWNalpha = 0.4; // transparency when released and when pressed
-const ItemModePress = "p", ItemModeRelease = "r", ItemModeTap = "t";
+const B_UpAlpha = 0.05,  B_DownAlpha = 0.3; // transparency when released and when pressed (white shape)
+const B_TogOnAlpha = 0.01,  B_TogOffAlpha = 0.7; // transparency when On and when Off (black shape)
+const CmdModePress = "p", CmdModeRelease = "r", CmdModeTap = "t";
 
 // An object that defines a hit target
 class Target {
-  constructor(name, x, y, d, type, code, mod) {
+  constructor(name, x, y, dw, h, type, mode, code, kMod) {
     // properties
     this.name = name; // Unique ID
     this.x = x; // Hit Target Center X
     this.y = y; // Hit Target Center X
-    this.d = d; // Hit Target Diameter
+    this.dw = dw; // Hit Target Diameter or width
+    this.h = h; // Hit Target height if 0 => circle and dw is d(iameter)
     this.type = type; // ItemType..
+    this.mode = mode; // ItemMode..
     this.code = code; // a number
-    this.mod = mod; // ItemMod
+    this.kMod = kMod; // ItemKMod
     // internal var
+    this.togState = false; // current toggle state true=>on, false=>off
+    if ( mode === ItemModeTogOn ) {
+      this.togState = true; // init as on
+    }
     this.shape = null;
     this.pressed = false;
   }
 
   // build and return a string like  '{"K":{""Modifier":"rc", VKcode":113, "Mode":"p"}}';
-  // IN: the command mode string (ItemModeXY)
+  // IN: the command mode string (CmdModeXY)
   // RETURNS: a command string
-  GetCommand(mode) {
-    var cmd = {"type":ItemModeTap, "str":""}; // default type is Tap i.e. one action on click or press
+  GetCommand( mode ) {
+    var cmd = {"cMode":CmdModeTap, "str":""}; // default type is Tap i.e. one action on click or press
 
     if (this.type === ItemTypeKey) {
-      cmd.type = ItemModePress; // has press and release action
-      cmd.str = '{"K":{"Modifier":"' + this.mod + '"';
+      if ( this.mode === ItemModePR ) {
+        cmd.cMode = CmdModePress; // has press and release action
+      } 
+      cmd.str = '{"K":{"Modifier":"' + this.kMod + '"';
       cmd.str += ',"VKcode":' + this.code.toString();
       cmd.str += ',"Mode":"' + mode + '"';
       cmd.str += '}}';
     }
     else if (this.type === ItemTypeButton) {
-      cmd.type = ItemModePress; // has press and release action
-      cmd.str = '{"B":{"Modifier":"' + this.mod + '"'; // modifier is not yet in the command but will be ignored..
+      if ( this.mode === ItemModePR ) {
+        cmd.cMode = CmdModePress; // has press and release action
+      } 
+      cmd.str = '{"B":{"Modifier":"' + this.kMod + '"'; // modifier is not yet in the command but will be ignored..
       cmd.str += ',"Index":' + this.code.toString();
       cmd.str += ',"Mode":"' + mode + '"';
       cmd.str += '}}';
@@ -114,13 +127,26 @@ class Target {
   // RETURNS: a createjs.Shape or null
   GetShape() {
     if (this.shape === null) {
-      var circle = new createjs.Shape();
-      circle.graphics.beginFill("white").drawCircle(0, 0, this.d / 2);
-      circle.x = this.x;
-      circle.y = this.y;
-      circle.alpha = B_UPalpha;
-      circle.name = this.name;
-      this.shape = circle;
+      var shape = new createjs.Shape();
+      if ( ( this.mode === ItemModeTogOn ) || ( this.mode === ItemModeTogOff ) ) {
+        if ( this.h === 0 ) {
+          shape.graphics.beginFill("black").drawCircle(this.x, this.y, this.dw / 2);
+        }
+        else {
+          shape.graphics.beginFill("black").drawRect(this.x-this.dw/2, this.y-this.h/2, this.dw, this.h);
+        }
+        shape.alpha = this.togState ? B_TogOnAlpha : B_TogOffAlpha;
+      } else {
+        if ( this.h === 0 ) {
+          shape.graphics.beginFill("white").drawCircle(this.x, this.y, this.dw / 2);
+        }
+        else {
+          shape.graphics.beginFill("white").drawRect(this.x-this.dw/2, this.y-this.h/2, this.dw, this.h);
+        }
+        shape.alpha = B_UpAlpha;
+      }
+      shape.name = this.name;
+      this.shape = shape;
     }
     return this.shape;
   }
@@ -137,9 +163,20 @@ class Target {
   // IN: a createjs Event
   Target_HandleEvent(evt) {
     if (evt.type == "mousedown") {
-      this.shape.alpha = B_DOWNalpha;
-      this.pressed = true;
-      var cmd = this.GetCommand(ItemModePress);
+      // button/key down, toggle click, axis set value
+      var cmd = "";
+      this.pressed = true; // track mouse Down
+      if ( ( this.mode === ItemModePR ) || ( this.mode === ItemModeVal ) ) {
+        // GUI change for non toggles
+        this.shape.alpha = B_DownAlpha;
+        var cmd = this.GetCommand( CmdModePress );
+      } 
+      else {
+        // GUI change for toggles
+        this.togState = !this.togState; // Toggle state
+        this.shape.alpha = this.togState ? B_TogOnAlpha : B_TogOffAlpha;
+        var cmd = this.GetCommand( CmdModeTap );
+      }
       var xmlhttp = new XMLHttpRequest();
       xmlhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
@@ -149,11 +186,15 @@ class Target {
       xmlhttp.open("GET", 'calludp.php?msg=' + cmd.str + '&ip=' + IP + '&p=' + PORT.toString(), true);
       xmlhttp.send();
     }
+
     if ((evt.type == "pressup") || (this.pressed && (evt.type == "mouseout"))) {
-      this.shape.alpha = B_UPalpha;
-      this.pressed = false;
-      var cmd = this.GetCommand(ItemModeRelease);
-      if ( cmd.type === "t") return; // tap types don't have a release action 
+      this.pressed = false; // track mouse Up/Out
+      if ( ( this.mode === ItemModePR ) || ( this.mode === ItemModeVal ) ) {
+        // GUI change for non toggles
+        this.shape.alpha = B_UpAlpha;
+      }
+      var cmd = this.GetCommand( CmdModeRelease );
+      if ( cmd.cMode === CmdModeTap ) return; // tap types don't have a release action 
 
       var xmlhttp = new XMLHttpRequest();
       xmlhttp.onreadystatechange = function () {
@@ -241,7 +282,7 @@ class Page_Base_obj {
 
   // build and return a string like  '{"K":{""Modifier":"rc", VKcode":113, "Mode":"p"}}';
   // IN: itemIndex 0... n
-  // IN: the command mode string (ItemModeXY)
+  // IN: the command mode string (CmdModeXY)
   // RETURNS: a command string
   GetCommand(itemIndex, mode) {
     if ((itemIndex >= 0) && (itemIndex < this.Items.length)) {
@@ -253,7 +294,7 @@ class Page_Base_obj {
 
   // build and return a string like  '{"K":{""Modifier":"rc", VKcode":113, "Mode":"p"}}';
   // IN: itemName - a string
-  // IN: the command mode string (ItemModeXY)
+  // IN: the command mode string (CmdModeXY)
   // RETURNS: a command string
   GetCommandByName(itemName, mode) {
     for (var i = 0; i < this.Items.length; ++i) {
