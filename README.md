@@ -1,4 +1,4 @@
-SCremoteServer V 0.1<br>
+SCremoteServer V 0.2<br>
 ====================<br>
 <br>
 SC Remote Interaction Web Server <br>
@@ -10,7 +10,7 @@ be used for other purposes as well.<br>
 Uses the UDP protocol to supply commands issued from the remote Web Browser<br>
 which may run on a tablet or similar interactive device appart from the game PC<br>
 It issues a Key/Button _down_ as long as pressing or clicking and holding the mouse on the target.<br>
-It can also issue vJoy Axis or Slider input with a distinct value (no analog slider so far..)<br>
+It can also issue vJoy Axis or Slider input with a distinct value or analog sliders<br>
 <br>
 The server can store or indicate states of toggles.<br>
 However I found that the game still looses keystrokes once in a while and then the<br>
