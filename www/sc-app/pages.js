@@ -29,6 +29,7 @@
  *              ItemModeTap      A short tap
  *              ItemModeVal      Value mode for Axis, Rot and Sliders
  *              ItemModeAnalog   Analog mode for Axis, Rot and Sliders (orientation is derived from the larger extent)
+ *              ItemModeSlider   Slider mode for Axis, Rot and Sliders (orientation is derived from the larger extent)
  *    code:   any VK_ name for Keys (see command.js) 
  *            the button index 1.. max for vJoy Buttons
  *            a 0 .. 1000 value for axis, rotaxis and sliders in Value mode
@@ -39,6 +40,40 @@
 const IP = '192.168.1.69';
 // the vJoy Command Server PORT (UDP protocol)
 const PORT = 34123;
+
+// Some 'consts' to be overwritten here - called at the very beginning
+// also other user init should be done here
+function  myPages_Init() 
+{
+  /*
+   CUSTOMIZATION OPTIONS HERE
+     This section can be fully or partially uncommented and used to overwrite the page_base.js defaults
+      used for the interaction with the page
+
+  // Mode: ItemModeTap - defines the length of a tap action
+  CmdModeShortTapDuration_ms = 100;  // The duration of a short tap in milliseconds
+  // Handle width (height) of the Slider behavior
+  SliderHandleWidth_px = 10;  // width or height of the illuminated part of the slider in pixel
+
+  // colors and transparency (0=invisible; 1= opaque) to indicate interaction
+
+  // Touch Targets - color is the touch indication color of the area when pressed or tapped
+  B_UpDownCol = "white";  // Button Down color
+  B_UpAlpha = 0.05;       // Don't set this to invisible else a touch is no longer detected
+  B_DownAlpha = 0.3;      // transparency when pressed (white shape highlights the click/touch)
+
+  // Toggle Targets - color is the hiding the area color and alpha the transparency of the two states 
+  B_TogCol = "black";     // Toggle cover mask color
+  B_TogOnAlpha = 0.01;    // Don't set this to invisible else a touch is no longer detected
+  B_TogOffAlpha = 0.7;    // transparency when Off (black shape covers the page drawing)
+  
+  // Analog Targets - color of the unset area i.e. the one above the set point
+  A_SliderCol = "black";  // Analog sliding cover mask color
+  A_Alpha = 0.9;          // transparency for the unused part of analog controls (black shape covers the page drawing)
+
+  */
+}
+
 
 // PAGE 1 Construction
 const page_1_obj = new Page_Base_obj(
@@ -62,7 +97,7 @@ const page_1_obj = new Page_Base_obj(
     new Target("ax4", 1100, 500, 90, 0, ItemTypeXaxis, ItemModeVal,   0, ItemKModNone),
     // analog sliding type
     new Target("al1", 1000, 300, 100, 500, ItemTypeXaxis, ItemModeAnalog,   500, ItemKModNone), // analog control X
-    new Target("al2",  800, 650, 500, 100, ItemTypeYaxis, ItemModeAnalog,   250, ItemKModNone), // analog control Y
+    new Target("al2",  800, 650, 510, 100, ItemTypeYaxis, ItemModeSlider,   250, ItemKModNone), // analog control Y
   ]
 );
 

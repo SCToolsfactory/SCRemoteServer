@@ -1,4 +1,4 @@
-SCremoteServer V 0.2<br>
+SCremoteServer V 0.3<br>
 ====================<br>
 <br>
 SC Remote Interaction Web Server <br>

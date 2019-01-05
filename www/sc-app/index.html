@@ -21,6 +21,9 @@
       // helper to access via array 1..n (element 0 is not used)
       pages = [null, page_1_obj, page_2_obj, page_3_obj, page_4_obj, page_5_obj];
 
+      // whatever init is required - it should be in that function found in pages.js
+      myPages_Init();  
+
       // create and show page 1
       pages[1].Init("pageCanvas"); // uses the canvas from the HTML element below
       expandedPage = pages[1];

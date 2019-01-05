@@ -1,9 +1,11 @@
 "use strict";
-// V 1.2
+// V 1.3
 // Base for the Page handling
 // !!!! Everything changed here affects all pages 
 //
 // 20181229 - V 1.2 added analog control, shortTap and L/RShift modifier
+// 20190105 - V 1.3 make shor tab with configurable duration
+//                  add Analog Slider (visualize a handle only)
 
 // Base consts for the Target
 
@@ -17,7 +19,9 @@ const ItemTypeRXaxis = "axRX", ItemTypeRYaxis = "axRY", ItemTypeRZaxis = "axRZ";
 const ItemTypeSL1 = "sl1",ItemTypeSL2 = "sl2";
 
 // Item modes
-const ItemModeTogOn = "ton", ItemModeTogOff = "toff", ItemModePR = "pr", ItemModeTap = "tp", ItemModeVal = "val", ItemModeAnalog = "alog";
+const ItemModeTogOn = "ton", ItemModeTogOff = "toff", ItemModePR = "pr", ItemModeTap = "tp", ItemModeVal = "val";
+const ItemModeAnalog = "alog", ItemModeSlider = "alogS";
+
 // Keystroke modifiers 
 const ItemKModNone = "n", ItemKModLCtrl = "lc", ItemKModRCtrl = "rc", ItemKModLAlt = "la", ItemKModRAlt = "ra", ItemKModLShift = "ls", ItemKModRShift = "rs";
 
@@ -28,11 +32,22 @@ const ItemKModNone = "n", ItemKModLCtrl = "lc", ItemKModRCtrl = "rc", ItemKModLA
 // *********************************************************************
 // Target  Object
 
-// internal use by Page_Base
-const B_UpAlpha = 0.05,  B_DownAlpha = 0.3; // transparency when released and when pressed (white shape)
-const B_TogOnAlpha = 0.01,  B_TogOffAlpha = 0.7; // transparency when On and when Off (black shape)
-const A_Alpha = 0.9;    // transparency for the unused part of analog controls (black shape)
+// internal use by Page_Base - can be changed in page.js - function myPages_Init()
+var B_UpAlpha = 0.05,  B_DownAlpha = 0.3; // transparency when released and when pressed (white shape)
+var B_UpDownCol = "white"; // Button Up Down mask color
+var B_TogOnAlpha = 0.01,  B_TogOffAlpha = 0.7; // transparency when On and when Off (black shape)
+var B_TogCol = "black"; // Toggle cover mask color
+var A_Alpha = 0.9;    // transparency for the unused part of analog controls (black shape)
+var A_SliderCol = "black"; // Analog sliding cover mask color
+// the duration of a tap - can be overwritten in pages Init function
+var CmdModeShortTapDuration_ms = 100;
+// Handle width (height) of the Slider behavior
+var SliderHandleWidth_px = 10; // width or height of the illuminated part of the slider in pixel
+
+
+// consts that are used to create JSON commands - better don't change them...
 const CmdModePress = "p", CmdModeRelease = "r", CmdModeTap = "t", CmdModeShortTap = "s";
+
 
 // An object that defines a hit target
 // IN: name : string
@@ -60,7 +75,7 @@ class Target {
     }
     this.shape = null;    // the event capture item
     this.shapeVis = null; // an additional shape for visualization only
-
+    
     this.pressed = false; // current pressed value for toggle types
     this.alogHorizontal = true;  // analog direction horizontal or vertical
   }
@@ -72,27 +87,29 @@ class Target {
     var cmd = {"cMode":CmdModeTap, "str":""}; // default type is Tap i.e. one action on click or press
 
     if (this.type === ItemTypeKey) {
-      if ( this.mode === ItemModePR ) {
-        cmd.cMode = CmdModePress; // has press or release action
-      } 
-      else if ( this.mode === ItemModeTap ) {
-        cmd.cMode = CmdModeShortTap; // has short tap action
-      } 
       cmd.str = '{"K":{"Modifier":"' + this.kMod + '"';
       cmd.str += ',"VKcode":' + this.codeVal.toString();
       cmd.str += ',"Mode":"' + cmdMode + '"';
-      cmd.str += '}}';
-    }
-    else if (this.type === ItemTypeButton) {
       if ( this.mode === ItemModePR ) {
         cmd.cMode = CmdModePress; // has press or release action
       } 
       else if ( this.mode === ItemModeTap ) {
         cmd.cMode = CmdModeShortTap; // has short tap action
+        cmd.str += ',"Delay":"' + CmdModeShortTapDuration_ms + '"';
       } 
+      cmd.str += '}}';
+    }
+    else if (this.type === ItemTypeButton) {
       cmd.str = '{"B":{"Modifier":"' + this.kMod + '"'; // modifier is not yet in the command but will be ignored..
       cmd.str += ',"Index":' + this.codeVal.toString();
       cmd.str += ',"Mode":"' + cmdMode + '"';
+      if ( this.mode === ItemModePR ) {
+        cmd.cMode = CmdModePress; // has press or release action
+      } 
+      else if ( this.mode === ItemModeTap ) {
+        cmd.cMode = CmdModeShortTap; // has short tap action
+        cmd.str += ',"Delay":"' + CmdModeShortTapDuration_ms + '"';
+      } 
       cmd.str += '}}';
     }
     // Axis 
@@ -147,33 +164,49 @@ class Target {
     if (this.shape === null) {
       var shape = new createjs.Shape();
       if ( ( this.mode === ItemModeTogOn ) || ( this.mode === ItemModeTogOff ) ) {
+        // Toggle items
         if ( this.h === 0 ) {
-          shape.graphics.beginFill("black").drawCircle(this.x, this.y, this.dw / 2);
+          shape.graphics
+              .beginFill(B_TogCol)
+              .drawCircle(this.x, this.y, this.dw / 2);
         }
         else {
-          shape.graphics.beginFill("black").drawRect(this.x-this.dw/2, this.y-this.h/2, this.dw, this.h);
+          shape.graphics
+              .beginFill(B_TogCol)
+              .drawRect(this.x-this.dw/2, this.y-this.h/2, this.dw, this.h);
         }
         shape.alpha = this.togState ? B_TogOnAlpha : B_TogOffAlpha;
       } 
-      else if ( ( this.mode === ItemModeAnalog ) ) {
+      else if ( ( this.mode === ItemModeAnalog ) || ( this.mode === ItemModeSlider ) ) {
+        // Analog and Slider controls
         if ( ( this.h === 0 ) || ( this.dw === 0 ) ) {
           // cannot create an element where w or h are zero - create an error one
-          shape.graphics.beginFill("red").drawRect(this.x, this.y, 100, 100);
+          shape.graphics
+              .beginFill("red") // ERROR MARKER
+              .drawRect(this.x, this.y, 100, 100);
           shape.alpha = 1.0;
         }
         else {
           this.alogHorizontal = (this.dw > this.h); // direction depends on larger extent
-            shape.graphics.beginFill("black").drawRect(this.x-this.dw/2, this.y-this.h/2, this.dw, this.h); // TODO turn invisible..
+            shape.graphics
+                .beginFill(A_SliderCol)
+                .drawRect(this.x-this.dw/2, this.y-this.h/2, this.dw, this.h);
         }
         shape.alpha = 0.01; // almost invisible mouse catcher - invisible is not tracked by the library
       }
       else {
         // everything else
         if ( this.h === 0 ) {
-          shape.graphics.beginFill("white").drawCircle( this.x, this.y, this.dw / 2 );
+          // Circle
+          shape.graphics
+              .beginFill(B_UpDownCol)
+              .drawCircle( this.x, this.y, this.dw / 2 );
         }
         else {
-          shape.graphics.beginFill("white").drawRect( this.x-this.dw/2, this.y-this.h/2, this.dw, this.h );
+          // Rectangle
+          shape.graphics
+              .beginFill(B_UpDownCol)
+              .drawRect( this.x-this.dw/2, this.y-this.h/2, this.dw, this.h );
         }
         shape.alpha = B_UpAlpha;
       }
@@ -183,20 +216,47 @@ class Target {
     return this.shape;
   }
 
-  // creates an additional visual shape for Analog controls
+  // creates an additional visual shape for Analog/Slider controls
   // RETURNS: a createjs.Shape or null
   GetShapeVis() {
     if (this.shapeVis === null) {
       var shapeVis = new createjs.Shape();
       if ( ( this.mode === ItemModeAnalog ) ) {
+        // unhide from 0.. Setpoint
         if ( this.alogHorizontal ) {
           var ext = this.codeVal * this.dw / 1000.0;
-          shapeVis.graphics.beginFill("black").drawRect( this.x-this.dw/2+ext, this.y-this.h/2, this.dw - ext, this.h );// TODO turn black..
+          shapeVis.graphics
+              .beginFill(A_SliderCol)
+              .drawRect( this.x-this.dw/2+ext, this.y-this.h/2, this.dw - ext, this.h ); // right cover
         }
         else {
           var ext = this.codeVal * this.h / 1000.0;
-          ext = this.h - ext;
-          shapeVis.graphics.beginFill("black").drawRect( this.x-this.dw/2, this.y-this.h/2, this.dw, ext );// TODO turn black..
+          ext = this.h - ext; // bottom up value increase
+          shapeVis.graphics
+              .beginFill(A_SliderCol)
+              .drawRect( this.x-this.dw/2, this.y-this.h/2, this.dw, ext ); // upper cover
+        }
+        shapeVis.alpha = A_Alpha;
+
+        this.shapeVis = shapeVis;
+        return shapeVis;
+      }
+      else if ( ( this.mode === ItemModeSlider ) ) {
+        // unhide the Handle 
+        if ( this.alogHorizontal ) {
+          var ext = this.codeVal * this.dw / 1000.0;
+          shapeVis.graphics
+              .beginFill(A_SliderCol)
+              .drawRect( this.x-this.dw/2+ext+SliderHandleWidth_px, this.y-this.h/2, this.dw - ext-SliderHandleWidth_px, this.h ) // right cover
+              .drawRect( this.x-this.dw/2, this.y-this.h/2, ext-SliderHandleWidth_px, this.h ); // left cover
+        }
+        else {
+          var ext = this.codeVal * this.h / 1000.0;
+          ext = this.h - ext; // bottom up value increase
+          shapeVis.graphics
+              .beginFill(A_SliderCol)
+              .drawRect( this.x-this.dw/2, this.y-this.h/2, this.dw, ext-SliderHandleWidth_px )  // upper cover
+              .drawRect( this.x-this.dw/2, this.y-this.h/2+ext+SliderHandleWidth_px, this.dw, this.h - ext-SliderHandleWidth_px ); // lower cover
         }
         shapeVis.alpha = A_Alpha;
 
@@ -210,29 +270,58 @@ class Target {
     return this.shapeVis;
   }
 
-  // get the new codeValue from the x,y mouse coords and updates the graph
+  // For Analog and Slider controls
+  //  get the new codeValue from the x,y mouse coords and updates the this.shapeVis
   SetCurrentALogExtent( stageX, stageY ) {
     // the slider scale is 0..1000, the extent is either h or dw
     if ( this.shapeVis === null ) return; // no shape to handle
     
     if ( this.alogHorizontal ) {
-      var localX = stageX - this.x + this.dw/2;
-      this.codeVal = localX  * 1000 / this.dw;
-      this.codeVal = (this.codeVal < 0 ) ? 0 : this.codeVal;
-      this.codeVal = (this.codeVal > 1000 ) ? 1000 : this.codeVal;
+      var localX = stageX - this.x + this.dw/2;  // get local extent
+      this.codeVal = localX  * 1000 / this.dw;   // change coord to analog value range
+      this.codeVal = (this.codeVal < 0 ) ? 0 : this.codeVal;        // Math.Min(..)
+      this.codeVal = (this.codeVal > 1000 ) ? 1000 : this.codeVal;  // Math.Max(..)
       localX = this.codeVal * this.dw / 1000.0; // recalc GUI coord to never over/under shoot
-      this.shapeVis.graphics.clear()
-        .beginFill("black").drawRect( this.x-this.dw/2+localX, this.y-this.h/2, this.dw-localX, this.h );
+      // draw cover around the setpoint
+      if ( this.mode === ItemModeAnalog ) {
+        // unhide from 0.. Setpoint
+        this.shapeVis.graphics
+            .clear()
+            .beginFill(A_SliderCol)
+            .drawRect( this.x-this.dw/2+localX, this.y-this.h/2, this.dw-localX, this.h );
       }
+      else if ( this.mode === ItemModeSlider ) {
+        // unhide the Handle 
+        this.shapeVis.graphics
+            .clear()
+            .beginFill(A_SliderCol)
+            .drawRect( this.x-this.dw/2+localX+SliderHandleWidth_px, this.y-this.h/2, this.dw-localX-SliderHandleWidth_px, this.h )
+            .drawRect( this.x-this.dw/2, this.y-this.h/2, localX-SliderHandleWidth_px, this.h );
+      }
+    }
     else {
-      var localY = stageY - this.y + this.h/2;
-      this.codeVal = localY * 1000 / this.h ;
-      this.codeVal = (this.codeVal < 0 ) ? 0 : this.codeVal;
-      this.codeVal = (this.codeVal > 1000 ) ? 1000 : this.codeVal;
-      this.codeVal = 1000 - this.codeVal; // bottom up..
+      var localY = stageY - this.y + this.h/2;  // get local extent
+      this.codeVal = localY * 1000 / this.h ;   // change coord to analog value range
+      this.codeVal = (this.codeVal < 0 ) ? 0 : this.codeVal;        // Math.Min(..)
+      this.codeVal = (this.codeVal > 1000 ) ? 1000 : this.codeVal;  // Math.Max(..)
+      this.codeVal = 1000 - this.codeVal;       // bottom up value increase
       localY = this.h - (this.codeVal * this.h / 1000.0); // recalc GUI coord to never over/under shoot
-      this.shapeVis.graphics.clear()
-      .beginFill("black").drawRect( this.x-this.dw/2, this.y-this.h/2, this.dw, localY ); // bottom up drawing
+      // draw cover around the setpoint
+      if ( this.mode === ItemModeAnalog ) {
+        // unhide from 0.. Setpoint
+        this.shapeVis.graphics
+            .clear()
+            .beginFill(A_SliderCol)
+            .drawRect( this.x-this.dw/2, this.y-this.h/2, this.dw, localY ); // bottom up drawing
+        }
+      else if ( this.mode === ItemModeSlider ) {
+        // unhide the Handle 
+        this.shapeVis.graphics
+            .clear()
+            .beginFill(A_SliderCol)
+            .drawRect( this.x-this.dw/2, this.y-this.h/2, this.dw, localY-SliderHandleWidth_px ) // bottom up drawing
+            .drawRect( this.x-this.dw/2, this.y-this.h/2+localY+SliderHandleWidth_px, this.dw, this.h - localY-SliderHandleWidth_px ); // lower cover
+          }
     }
     this.shapeVis.alpha = A_Alpha;
   }
@@ -263,9 +352,9 @@ class Target {
       else if ( this.mode === ItemModeTap ) {
         // GUI change for non toggle shortTap
         this.shape.alpha = B_DownAlpha;
-        cmd = this.GetCommand( CmdModeShortTap );
+        cmd = this.GetCommand( CmdModeTap );
       } 
-      else if ( this.mode === ItemModeAnalog ) {
+      else if ( ( this.mode === ItemModeAnalog ) || ( this.mode === ItemModeSlider )){
         // GUI change for analog control
         this.SetCurrentALogExtent( evt.stageX, evt.stageY );
         cmd = this.GetCommand( CmdModePress );
@@ -288,7 +377,7 @@ class Target {
 
     else if ( evt.type == "pressmove") {
       // analog control only
-      if ( this.mode === ItemModeAnalog ) {
+      if ( ( this.mode === ItemModeAnalog ) || ( this.mode === ItemModeSlider )){
         // GUI change for analog control while moving 
         this.SetCurrentALogExtent( evt.stageX, evt.stageY );
         cmd = this.GetCommand( CmdModePress );
