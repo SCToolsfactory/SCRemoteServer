@@ -1,4 +1,4 @@
-SCremoteServer V 0.3<br>
+SCremoteServer V 0.5<br>
 ====================<br>
 <br>
 SC Remote Interaction Web Server <br>
@@ -15,6 +15,10 @@ It can also issue vJoy Axis or Slider input with a distinct value or analog slid
 The server can store or indicate states of toggles.<br>
 However I found that the game still looses keystrokes once in a while and then the<br>
 toggle persistence is not helpful but even confuses the user...<br>
+<br>
+NEW: This version supports real-time display of data available from a json file in various forms.<br>
+The upload can be automated using SCJoyServer which now carries a web uploader.<br>
+For more information - see doc.<br>
 <br>
 Uses: easelJS library - see license file
 <br>

@@ -1,0 +1,5 @@
+{
+  "section1":{"item1":"A very long string but may be still a string", "item2": 123.1}
+ ,"section2":{"item33":"Other String", "item44": 123.5, "item55":true}
+ ,"section3":{"tog1":false, "tog2": false, "sig1":true, "alog1": 65, "alog2": 35, "sli1":33 }
+}

@@ -1,0 +1,5 @@
+{
+  "section1":{"item1":"Short", "item2": 125.6}
+ ,"section2":{"item33":"Other String", "item44": 1125265, "item55":true}
+ ,"section3":{"tog1":false, "tog2": true, "sig1":false, "alog1": 100, "alog2": 16, "sli1":10 }
+}

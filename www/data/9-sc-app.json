@@ -1,0 +1,5 @@
+{
+  "section1":{"item1":"UTF-8 Example", "item2": 122.8}
+ ,"section2":{"item33":"Other String", "item44": 125, "item55":true}
+ ,"section3":{"tog1":false, "tog2": false, "sig1":true, "alog1": 50, "alog2": 32, "sli1":16 }
+}

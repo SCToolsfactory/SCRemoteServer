@@ -1,0 +1,5 @@
+{
+  "section1":{"item1":"Peter, Paul and Mary...", "item2": 130.1}
+ ,"section2":{"item33":"Other String", "item44": 42, "item55":true}
+ ,"section3":{"tog1":true, "tog2": false, "sig1":false, "alog1": 12, "alog2": 75, "sli1":88 }
+}

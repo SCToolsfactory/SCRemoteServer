@@ -1,0 +1,5 @@
+{
+  "section1":{"item1":"UTF-8 Παράδειγμα - may be ??", "item2": 132.7}
+ ,"section2":{"item33":"Other String", "item44": 12547, "item55":true}
+ ,"section3":{"tog1":false, "tog2": true, "sig1":true, "alog1": 45, "alog2": 22, "sli1":100 }
+}
