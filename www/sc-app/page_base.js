@@ -1,6 +1,6 @@
 "use strict";
 //
-// V 1.5
+// V 1.6
 // Base Code for the Page handling
 // !!!! Everything changed here affects all pages 
 // Mods are available but use the myPages_Init() function for this
@@ -15,6 +15,7 @@
 //                  add Analog Slider (visualize a handle only)
 // 20190109 - V 1.4 add data content upload and display
 // 20190111 - V 1.5 add display toggles, signals, analog (bars) and sliders
+// 20190117 - V 1.6 add 'BiColor' toggles for activation and display
 
 // Debug support
 //  Find the DEBUG only comment in XMLHttpRequest and comment the complete line to remove the text output to the HTML page
@@ -33,7 +34,9 @@ const ItemTypeRXaxis = "axRX", ItemTypeRYaxis = "axRY", ItemTypeRZaxis = "axRZ";
 const ItemTypeSL1 = "sl1",ItemTypeSL2 = "sl2";
 
 // Item modes
-const ItemModeTogOn = "ton", ItemModeTogOff = "toff", ItemModePR = "pr", ItemModeTap = "tp", ItemModeVal = "val";
+const ItemModeTogOn = "ton", ItemModeTogOff = "toff";
+const ItemModeBiTog = "bit", ItemModeBiTogLR = "bitlr";
+const ItemModePR = "pr", ItemModeTap = "tp", ItemModeVal = "val";
 const ItemModeAnalog = "alog", ItemModeSlider = "alogS";
 
 // Keystroke modifiers 
@@ -43,7 +46,9 @@ const ItemKModNone = "n", ItemKModLCtrl = "lc", ItemKModRCtrl = "rc", ItemKModLA
 // *** Base consts for the Data Display (don't change, else it breaks)
 
 // Display modes
-const DispModeTxt = "txt", DispModeTogOn = "ton", DispModeTogOff = "toff", DispModeSig = "sig";
+const DispModeTxt = "txt", DispModeSig = "sig";
+const DispModeTogOn = "ton", DispModeTogOff = "toff";
+const DispModeBiTog = "bit", DispModeBiTogLR = "bitlr";
 const DispModeAnalog = "alog", DispModeSlider = "alogS";
 
 // Display  Alignment
@@ -146,7 +151,7 @@ class Target {
     this.codeVal = codeVal; // a number either code, index or value
     this.kMod = kMod; // ItemKMod
     // internal var
-    this.togState = false; // current toggle state true=>on, false=>off
+    this.togState = false; // current toggle state true=>on, false=>off  -default OFF
     if ( mode === ItemModeTogOn ) {
       this.togState = true; // init as on
     }
@@ -254,8 +259,22 @@ class Target {
         }
         shape.alpha = this.togState ? B_TogOnAlpha : B_TogOffAlpha;
       } 
+      else if ( ( this.mode === ItemModeBiTog ) || ( this.mode === ItemModeBiTogLR ) ) {
+        // Bi Toggle items - needs ShapeVis as well - here we create the click capture
+        if ( this.h === 0 ) {
+          shape.graphics
+              .beginFill("black")
+              .drawCircle(this.x, this.y, this.dw / 2);
+        }
+        else {
+          shape.graphics
+              .beginFill("black")
+              .drawRect(this.x-this.dw/2, this.y-this.h/2, this.dw, this.h);
+        }
+        shape.alpha = 0.01; // almost invisible mouse catcher - invisible is not tracked by the library
+      } 
       else if ( ( this.mode === ItemModeAnalog ) || ( this.mode === ItemModeSlider ) ) {
-        // Analog and Slider controls
+        // Analog and Slider controls - needs ShapeVis as well - here we create the click capture
         if ( ( this.h === 0 ) || ( this.dw === 0 ) ) {
           // cannot create an element where w or h are zero - create an error one
           shape.graphics
@@ -293,24 +312,29 @@ class Target {
     return this.shape;
   }
 
-  // creates an additional visual shape for Analog/Slider controls
+  // creates an additional visual shape for Analog/Slider, BiToggle controls
   // RETURNS: a createjs.Shape or null
   GetShapeVis() {
     if (this.shapeVis === null) {
+
       var shapeVis = new createjs.Shape();
-      if ( ( this.mode === ItemModeAnalog ) ) {
+      if ( ( this.mode === ItemModeBiTog ) || ( this.mode === ItemModeBiTogLR ) ) {
+        this.shapeVis = shapeVis;
+        this.SetCurrentBiTog(); // use toggle state method
+        return shapeVis;
+      }
+
+      else if ( ( this.mode === ItemModeAnalog ) ) {
         // unhide from 0.. Setpoint
         if ( this.alogHorizontal ) {
           var ext = this.codeVal * this.dw / 1000.0;
-          shapeVis.graphics
-              .beginFill(A_AnalogCol)
+          shapeVis.graphics.beginFill(A_AnalogCol)
               .drawRect( this.x-this.dw/2+ext, this.y-this.h/2, this.dw - ext, this.h ); // right cover
         }
         else {
           var ext = this.codeVal * this.h / 1000.0;
           ext = this.h - ext; // bottom up value increase
-          shapeVis.graphics
-              .beginFill(A_AnalogCol)
+          shapeVis.graphics.beginFill(A_AnalogCol)
               .drawRect( this.x-this.dw/2, this.y-this.h/2, this.dw, ext ); // upper cover
         }
         shapeVis.alpha = A_AnalogAlpha;
@@ -322,8 +346,7 @@ class Target {
         // unhide the Handle 
         if ( this.alogHorizontal ) {
           var ext = this.codeVal * this.dw / 1000.0;
-          shapeVis.graphics
-              .beginFill(A_SliderCol)
+          shapeVis.graphics.beginFill(A_SliderCol)
               .drawRect( this.x-this.dw/2+ext+A_SliderHandleWidth_px, this.y-this.h/2, this.dw - ext-A_SliderHandleWidth_px, this.h ) // right cover
               .drawRect( this.x-this.dw/2, this.y-this.h/2, ext-A_SliderHandleWidth_px, this.h ); // left cover
         }
@@ -346,6 +369,58 @@ class Target {
     }
     return this.shapeVis;
   }
+
+  // sets the current bi-color toggle maksing shape
+  SetCurrentBiTog ( ) {
+    if (this.shapeVis === null) return;
+    if ( ( this.mode === ItemModeBiTog ) ) {
+      if ( this.togState===true ){
+        if ( this.h === 0 ) { // ON - circle cover upper
+          this.shapeVis.graphics.clear().beginFill(B_TogCol)
+              .arc( this.x, this.y, this.dw/2, -Math.PI, 0 ).closePath(); 
+        }
+        else {
+          this.shapeVis.graphics.clear().beginFill(B_TogCol)
+              .drawRect(this.x-this.dw/2, this.y-this.h/2, this.dw, this.h/2);
+        }
+      }
+      else {
+        if ( this.h === 0 ) { // OFF - circle cover lower
+          this.shapeVis.graphics.clear().beginFill(B_TogCol)
+              .arc( this.x, this.y, this.dw/2, 0, Math.PI).closePath(); 
+        }
+        else {
+          this.shapeVis.graphics.clear().beginFill(B_TogCol)
+              .drawRect(this.x-this.dw/2, this.y, this.dw, this.h/2);
+        }
+        this.shapeVis.alpha = B_TogOffAlpha;
+      }
+    }
+    else if ( ( this.mode === ItemModeBiTogLR ) ) {
+      if ( this.togState===true ){
+        if ( this.h === 0 ) { // ON - circle cover left
+          this.shapeVis.graphics.clear().beginFill(B_TogCol)
+              .arc( this.x, this.y, this.dw/2, -Math.PI/2, +Math.PI/2, true ).closePath(); 
+        }
+        else {
+          this.shapeVis.graphics.clear().beginFill(B_TogCol)
+              .drawRect(this.x-this.dw/2, this.y-this.h/2, this.dw/2, this.h);
+        }
+      }
+      else {
+        if ( this.h === 0 ) { // OFF - circle cover right
+          this.shapeVis.graphics.clear().beginFill(B_TogCol)
+              .arc( this.x, this.y, this.dw/2, -Math.PI/2, +Math.PI/2, false).closePath(); 
+        }
+        else {
+          this.shapeVis.graphics.clear().beginFill(B_TogCol)
+              .drawRect(this.x, this.y-this.h/2, this.dw/2, this.h);
+        }
+      }
+      this.shapeVis.alpha = B_TogOffAlpha;
+      }
+    }
+  
 
   // For Analog and Slider controls
   //  get the new codeValue from the x,y mouse coords and updates the this.shapeVis
@@ -436,9 +511,15 @@ class Target {
         this.SetCurrentALogExtent( evt.stageX, evt.stageY );
         cmd = this.GetCommand( CmdModePress );
       } 
+      else if ( ( this.mode === ItemModeBiTog ) || ( this.mode === ItemModeBiTogLR ) ) {
+        // GUI change for bi-color toggle
+        this.togState = !this.togState; // Toggle state update
+        this.SetCurrentBiTog();
+        cmd = this.GetCommand( CmdModeTap );
+      }
       else {
         // GUI change for toggle key and buttons
-        this.togState = !this.togState; // Toggle state
+        this.togState = !this.togState; // Toggle state update
         this.shape.alpha = this.togState ? B_TogOnAlpha : B_TogOffAlpha;
         cmd = this.GetCommand( CmdModeTap );
       }
@@ -538,6 +619,7 @@ class Display {
   GetDispShape() {
     // create the base shape 
     if (this.shapeVis === null) {
+
       var shape = new createjs.Shape();
       if ( ( this.mode === DispModeTogOn ) || ( this.mode === DispModeTogOff ) ) {
         // Toggle items
@@ -553,6 +635,11 @@ class Display {
         }
         shape.alpha = (this.mode===DispModeTogOn) ? D_TogOnAlpha : D_TogOffAlpha;
       } 
+      else if ( ( this.mode === ItemModeBiTog ) || ( this.mode === ItemModeBiTogLR ) ) {
+        this.shapeVis = shape;
+        this.SetCurrentBiTog(); // use toggle state method
+      }
+
       else if ( this.mode === DispModeSig ) {
         // Signal items
         if ( this.h === 0 ) {
@@ -597,6 +684,57 @@ class Display {
     return this.shapeVis;
   }
 
+  // sets the current bi-color toggle maksing shape
+  SetCurrentBiTog ( value = false ) {
+    if (this.shapeVis === null) return;
+    if ( ( this.mode === ItemModeBiTog ) ) {
+      if ( value===true ){
+        if ( this.h === 0 ) { // ON - circle cover upper
+          this.shapeVis.graphics.clear().beginFill(B_TogCol)
+              .arc( this.x, this.y, this.dw/2, -Math.PI, 0 ).closePath(); 
+        }
+        else {
+          this.shapeVis.graphics.clear().beginFill(B_TogCol)
+              .drawRect(this.x-this.dw/2, this.y-this.h/2, this.dw, this.h/2);
+        }
+      }
+      else {
+        if ( this.h === 0 ) { // OFF - circle cover lower
+          this.shapeVis.graphics.clear().beginFill(B_TogCol)
+              .arc( this.x, this.y, this.dw/2, 0, Math.PI).closePath(); 
+        }
+        else {
+          this.shapeVis.graphics.clear().beginFill(B_TogCol)
+              .drawRect(this.x-this.dw/2, this.y, this.dw, this.h/2);
+        }
+        this.shapeVis.alpha = D_TogOffAlpha;
+      }
+    }
+    else if ( ( this.mode === ItemModeBiTogLR ) ) {
+      if ( value===true ){
+        if ( this.h === 0 ) { // ON - circle cover left
+          this.shapeVis.graphics.clear().beginFill(B_TogCol)
+              .arc( this.x, this.y, this.dw/2, -Math.PI/2, +Math.PI/2, true ).closePath(); 
+        }
+        else {
+          this.shapeVis.graphics.clear().beginFill(B_TogCol)
+              .drawRect(this.x-this.dw/2, this.y-this.h/2, this.dw/2, this.h);
+        }
+      }
+      else {
+        if ( this.h === 0 ) { // OFF - circle cover right
+          this.shapeVis.graphics.clear().beginFill(B_TogCol)
+              .arc( this.x, this.y, this.dw/2, -Math.PI/2, +Math.PI/2, false).closePath(); 
+        }
+        else {
+          this.shapeVis.graphics.clear().beginFill(B_TogCol)
+              .drawRect(this.x, this.y-this.h/2, this.dw/2, this.h);
+        }
+      }
+      this.shapeVis.alpha = D_TogOffAlpha;
+    }
+  }
+  
   // For Analog and Slider display
   //  get the new codeValue from the x,y mouse coords and updates the this.shapeVis
   // IN: the new value 0..100
@@ -688,23 +826,31 @@ class Display {
       if ( this.text === null) return; // safeguard..
       this.text.text = (_x_globalData[this.section])[this.item];
     }
-    else if ( this.mode === DispModeTogOn ){
+    else if ( this.mode === DispModeTogOn ) {
       if ( this.shapeVis === null) return; // safeguard..
       this.shapeVis.alpha = ((_x_globalData[this.section])[this.item]===false) ? D_TogOnAlpha : D_TogOffAlpha;
     }
-    else if ( this.mode === DispModeTogOff ){
+    else if ( this.mode === DispModeTogOff ) {
       if ( this.shapeVis === null) return; // safeguard..
       this.shapeVis.alpha = ((_x_globalData[this.section])[this.item]===true) ? D_TogOnAlpha : D_TogOffAlpha;
     }
-    else if ( this.mode === DispModeSig ){
+    else if ( this.mode === DispModeSig ) {
       if ( this.shapeVis === null) return; // safeguard..
       this.shapeVis.alpha = ((_x_globalData[this.section])[this.item]===true) ? D_SigOnAlpha : D_SigOffAlpha;
     }
-    else if ( this.mode === DispModeAnalog ){
+    else if ( this.mode === DispModeBiTog ) {
+      if ( this.shapeVis === null) return; // safeguard..
+      this.SetCurrentBiTog( (_x_globalData[this.section])[this.item] );
+    }
+    else if ( this.mode === DispModeBiTogLR ) {
+      if ( this.shapeVis === null) return; // safeguard..
+      this.SetCurrentBiTog( (_x_globalData[this.section])[this.item] );
+    }
+    else if ( this.mode === DispModeAnalog ) {
       if ( this.shapeVis === null) return; // safeguard..
       this.SetCurrentALogExtent( (_x_globalData[this.section])[this.item] );
     }
-    else if ( this.mode === DispModeSlider ){
+    else if ( this.mode === DispModeSlider ) {
       if ( this.shapeVis === null) return; // safeguard..
       this.SetCurrentALogExtent( (_x_globalData[this.section])[this.item] );
     }

@@ -30,6 +30,8 @@
  *    mode:   Press/Release, Toggle, Analog, Slider or Value mode
  *              ItemModeTogOn    Toggle with ON (light up) at startup
  *              ItemModeTogOff   Toggle with OFF (darkened) at startup
+ *              ItemModeBiTog    Toggle type (default OFF shows the upper part)
+ *              ItemModeBiTogLR  Toggle type (default OFF shows the left part)
  *              ItemModePR       Press Release
  *              ItemModeTap      A short tap
  *              ItemModeVal      Value mode for Axis, Rot and Sliders
@@ -56,6 +58,8 @@
  *                               CenterAlign centers the text around x,y.
  *              DispModeTogOn    Toggle type (boolean data only - default ON unmasked, false shows the background)
  *              DispModeTogOff   Toggle type (boolean data only - default OFF masked, true shows the background)
+ *              DispModeBiTog    Toggle type (boolean data only - default OFF shows the upper part)
+ *              DispModeBiTogLR  Toggle type (boolean data only - default OFF shows the left part)
  *              DispModeSig      Signal type (boolean data only - the background is covered by the shape with color if true)
  *              DispModeAnalog   Analog type 0..100.0 (value data only - a bar of value size is show - the rest is masked out)
  *              DispModeSlider   Slider type 0..100.0 (value data only - a slider handle is shown at the value position)
@@ -155,7 +159,12 @@ const page_1_obj = new Page_Base_obj(
     new Target("tg1", 100, 500, 90, 0, ItemTypeKey, ItemModeTogOn,   VK_V, ItemKModNone), // toggles with the V key - KeyDown/up when pressed - def ON
     new Target("tg2", 200, 500, 90, 0, ItemTypeButton, ItemModeTogOn,   4, ItemKModNone), // toggles with the button4 - Down/up when pressed - def ON
     new Target("tg3", 300, 500, 90, 0, ItemTypeKey, ItemModeTogOff,  VK_W, ItemKModNone), // toggles with the W key - KeyDown/up when pressed - def OFF
-    new Target("tg4", 400, 500, 90, 0, ItemTypeButton, ItemModeTogOff,  5, ItemKModNone), // toggles with the button6 - Down/up when pressed - def OFF
+    new Target("tg4", 400, 500, 90, 0, ItemTypeButton, ItemModeTogOff,  5, ItemKModNone), // toggles with the button5 - Down/up when pressed - def OFF
+    // bi-color toggles 
+    new Target("tg5", 400, 350, 85, 0, ItemTypeButton, ItemModeBiTog,  6, ItemKModNone), // toggles with the button6
+    new Target("tg6", 250, 250, 95, 95, ItemTypeButton, ItemModeBiTog,  7, ItemKModNone), // toggles with the button7
+    new Target("tg7", 400, 250, 100, 0, ItemTypeButton, ItemModeBiTog,  8, ItemKModNone), // toggles with the button8
+    new Target("tg8", 250, 350, 100, 70, ItemTypeButton, ItemModeBiTogLR,  9, ItemKModNone), // toggles with the button9
     // analog X axis simulation with 5 ticks from 0..max
     new Target("ax0", 1250, 100, 90, 0, ItemTypeXaxis, ItemModeVal, 1000, ItemKModNone),
     new Target("ax1", 1250, 200, 90, 0, ItemTypeXaxis, ItemModeVal,  750, ItemKModNone),
@@ -175,7 +184,9 @@ const page_1_obj = new Page_Base_obj(
     // Toggles
     new Display("dItm11",  100, 600, 50,   0, DispModeTogOn, Dummy, Dummy, Dummy, Dummy, "section3", "tog1"), // circle
     new Display("dItm12",  300, 600, 50,   0, DispModeTogOff, Dummy, Dummy, Dummy, Dummy, "section3", "tog1"), // circle
-
+    // Bi color Toggles
+    new Display("dItm21",  100, 700, 85,   0, DispModeBiTogLR, Dummy, Dummy, Dummy, Dummy, "section3", "tog1"),
+    new Display("dItm22",  300, 700, 95,  95, DispModeBiTog, Dummy, Dummy, Dummy, Dummy, "section3", "tog2"),
     // Signal - uses the given color as shape color (shown when true)
     new Display("dItm14", 1000, 200, 70,   0, DispModeSig, Dummy, Dummy, Dummy, D_Green, "section3", "sig1"), // circle
     // Analogs (Bars)
