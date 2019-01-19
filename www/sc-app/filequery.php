@@ -14,7 +14,7 @@
     $dataLoc = '../data/';
 
     // get message
-    $file = $_GET["q"];
+    $file =  basename($_GET["q"]); // don't allow directories
     // file should be in ../data and pure ASCII filename only
     $basename = filter_var($file, FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH);
     $filename = $dataLoc . $basename;

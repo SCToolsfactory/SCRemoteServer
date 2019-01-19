@@ -1,10 +1,10 @@
 "use strict";
 //
-// V 1.6
+// V 1.7
 // Base Code for the Page handling
 // !!!! Everything changed here affects all pages 
 // Mods are available but use the myPages_Init() function for this
-// In general there is nothing to change in this file for standard usage
+// --> In general there is nothing to change in this file for standard usage
 //
 // (c) 2019 Martin Burri
 // MIT License - no warranties whatsoever...
@@ -16,47 +16,10 @@
 // 20190109 - V 1.4 add data content upload and display
 // 20190111 - V 1.5 add display toggles, signals, analog (bars) and sliders
 // 20190117 - V 1.6 add 'BiColor' toggles for activation and display
+// 20190119 - V 1.7 add global state to support value sharing accross pages (same target name)
 
 // Debug support
-//  Find the DEBUG only comment in XMLHttpRequest and comment the complete line to remove the text output to the HTML page
-
-// *** Base consts for the Targets (don't change, else it breaks)
-
-const Dummy = null;   // safe argument for not used parameters
-
-// Activation Types
-// Key and Button activation (Key expects Values of KV_.., Buttons 1..max)
-const ItemTypeKey = "key", ItemTypeButton = "btn";
-
-// Axis and RotAxis and Slider activation (accepts values from 0..1000, where 500 is the midpoint)
-const ItemTypeXaxis = "axX", ItemTypeYaxis = "axY", ItemTypeZaxis = "axZ";
-const ItemTypeRXaxis = "axRX", ItemTypeRYaxis = "axRY", ItemTypeRZaxis = "axRZ";
-const ItemTypeSL1 = "sl1",ItemTypeSL2 = "sl2";
-
-// Item modes
-const ItemModeTogOn = "ton", ItemModeTogOff = "toff";
-const ItemModeBiTog = "bit", ItemModeBiTogLR = "bitlr";
-const ItemModePR = "pr", ItemModeTap = "tp", ItemModeVal = "val";
-const ItemModeAnalog = "alog", ItemModeSlider = "alogS";
-
-// Keystroke modifiers 
-const ItemKModNone = "n", ItemKModLCtrl = "lc", ItemKModRCtrl = "rc", ItemKModLAlt = "la", ItemKModRAlt = "ra", ItemKModLShift = "ls", ItemKModRShift = "rs";
-
-
-// *** Base consts for the Data Display (don't change, else it breaks)
-
-// Display modes
-const DispModeTxt = "txt", DispModeSig = "sig";
-const DispModeTogOn = "ton", DispModeTogOff = "toff";
-const DispModeBiTog = "bit", DispModeBiTogLR = "bitlr";
-const DispModeAnalog = "alog", DispModeSlider = "alogS";
-
-// Display  Alignment
-const LeftAlign = "left", CenterAlign = "center", RightAlign = "right";
-
-// Display Modes (Baseline)
-const Bottom = "bottom", Middle = "middle", Top = "top";
-
+//  Find the @@@DEBUG comment below in XMLHttpRequest and comment the complete line to remove the text output to the HTML page
 
 // *** Prefabricated items that can be re-defined in the page.js - function myPages_Init()
 
@@ -101,7 +64,7 @@ var A_SliderCol = "black"; // cover mask color
 var A_SliderAlpha = 0.9;         // transparency for the unused part of analog controls (black shape)
 // Target Handle width (height) of the Slider behavior
 var A_SliderHandleWidth_px = 10; // width or height of the illuminated part of the slider in pixel
-// the duration of a tap - can be overwritten in pages Init function
+// the default duration of a tap
 var CmdModeShortTapDuration_ms = 100;
 
 
@@ -121,12 +84,97 @@ var D_SliderHandleWidth_px = 10; // width or height of the illuminated part of t
 
 // END OF Prefabricated items
 
+
+// *** Base consts (labels) for the Targets (don't change, else it breaks)
+
+const Dummy = null;   // safe argument for not used parameters
+
+// Activation Types
+// Key and Button activation (Key expects Values of KV_.., Buttons 1..max)
+const ItemTypeKey = "key", ItemTypeButton = "btn";
+
+// Axis and RotAxis and Slider activation (accepts values from 0..1000, where 500 is the midpoint)
+const ItemTypeXaxis = "axX", ItemTypeYaxis = "axY", ItemTypeZaxis = "axZ";
+const ItemTypeRXaxis = "axRX", ItemTypeRYaxis = "axRY", ItemTypeRZaxis = "axRZ";
+const ItemTypeSL1 = "sl1",ItemTypeSL2 = "sl2";
+
+// Item modes
+const ItemModeTogOn = "ton", ItemModeTogOff = "toff";
+const ItemModeBiTog = "bit", ItemModeBiTogLR = "bitlr";
+const ItemModePR = "pr", ItemModeTap = "tp", ItemModeVal = "val";
+const ItemModeAnalog = "alog", ItemModeSlider = "alogS";
+
+// Keystroke modifiers 
+const ItemKModNone = "n", ItemKModLCtrl = "lc", ItemKModRCtrl = "rc", ItemKModLAlt = "la", ItemKModRAlt = "ra", ItemKModLShift = "ls", ItemKModRShift = "rs";
+
+
+// *** Base consts for the Data Display (don't change, else it breaks)
+
+// Display modes
+const DispModeTxt = "txt", DispModeSig = "sig";
+const DispModeTogOn = "ton", DispModeTogOff = "toff";
+const DispModeBiTog = "bit", DispModeBiTogLR = "bitlr";
+const DispModeAnalog = "alog", DispModeSlider = "alogS";
+
+// Display  Alignment
+const LeftAlign = "left", CenterAlign = "center", RightAlign = "right";
+
+// Display Modes (Baseline)
+const Bottom = "bottom", Middle = "middle", Top = "top";
+
+
 // INTERNAL ONLY 
 
 // consts that are used to create JSON commands - better don't change them...
 const CmdModePress = "p", CmdModeRelease = "r", CmdModeTap = "t", CmdModeShortTap = "s";
+// Max value of the Analog/Slider scaling (matches the SCvJoyServer convention)
+const A_Scale = 1000.0; 
+// Max value of the Display Analog/Slider scaling (matches the JSON upload file convention)
+const D_Scale = 100.0;  
 // store for the display data - will be loaded through Tick event
 var _x_globalData = null;
+
+
+// *********************************************************************
+// InternalState  Object
+
+// Stores the internal state of toggle and analog/slider activation items
+// used when the same item (name) is used accross the site
+// stores either a state (bool) or value (int)
+
+// fake static class variable -- access should only be by "InternalState.States"
+//  store for all internal state values
+var _x_states = [];
+
+class InternalState {
+  constructor(name, value) {
+    this.name = name;   // the value reference name
+    this.value = value; // current toggle state true=>on, false=>off  -default OFF OR the current value
+  }
+
+  // Value property
+  get Value() { return this.value;}
+  set Value(value) {this.value = value;}
+
+  // mimic a static variable of the class that stores all states...
+  static get States(){ return _x_states; }
+
+  // returns either an existing state object or a new one if not yet managed
+  static GetState(name){
+    // scan existing ones
+    for (var i=0; i<InternalState.States.length; i++){
+      if ( InternalState.States[i].name===name){
+        return InternalState.States[i]; // exists, return it
+      }
+    }
+    // not found, create and manage a new one
+    var x = new InternalState(name, null);
+    InternalState.States.push(x);
+    return x;
+  }
+}//class
+
+
 
 // *********************************************************************
 // Target  Object
@@ -148,19 +196,39 @@ class Target {
     this.h = h; // Hit Target height if 0 => circle and dw is d(iameter)
     this.type = type; // ItemType..
     this.mode = mode; // ItemMode..
-    this.codeVal = codeVal; // a number either code, index or value
     this.kMod = kMod; // ItemKMod
-    // internal var
-    this.togState = false; // current toggle state true=>on, false=>off  -default OFF
-    if ( mode === ItemModeTogOn ) {
-      this.togState = true; // init as on
-    }
+    // internal vars
     this.shape = null;    // the event capture item
     this.shapeVis = null; // an additional shape for visualization only
     
     this.pressed = false; // current pressed value for toggle types
     this.alogHorizontal = true;  // analog direction horizontal or vertical
+
+    this.state = null; // default state obj
+    if (this.mode===ItemModeAnalog || this.mode===ItemModeSlider ) {
+        // maintain a managed value state for this activation
+        this.state = InternalState.GetState(name); // state storage
+        this.state.Value = codeVal; // Init
+    }
+    else if (this.mode===ItemModeTogOn || this.mode===ItemModeTogOff ||
+      this.mode===ItemModeBiTog ||this.mode===ItemModeBiTogLR ) {
+        // maintain a managed toggle state for this activation
+        this.state = InternalState.GetState(name); // state storage
+        this.state.Value = (mode===ItemModeTogOn) ? true : false; // Init
+    } 
+    else {
+      // all others - maintain an independent state for values
+      this.state = new InternalState(name, codeVal); // a number either code, index or value
+    }
   }
+
+  // the current code/value
+  get codeVal() {return this.state.Value;}
+  set codeVal(value) { this.state.Value = value;}
+  // the current toggleState
+  get togState() {return this.state.Value;}
+  set togState(value) { this.state.Value = value;}
+
 
   // build and return a string like  '{"K":{""Modifier":"rc", VKcode":113, "Mode":"p"}}';
   // IN: the command mode string (CmdModeXY)
@@ -240,7 +308,7 @@ class Target {
     return cmd;
   }
 
-  // creates the shape if needed and returns it
+  // creates the click capture shape if needed and returns it
   // RETURNS: a createjs.Shape or null
   GetShape() {
     if (this.shape === null) {
@@ -248,64 +316,60 @@ class Target {
       if ( ( this.mode === ItemModeTogOn ) || ( this.mode === ItemModeTogOff ) ) {
         // Toggle items
         if ( this.h === 0 ) {
-          shape.graphics
-              .beginFill(B_TogCol)
+          shape.graphics.beginFill(B_TogCol)
               .drawCircle(this.x, this.y, this.dw / 2);
         }
         else {
-          shape.graphics
-              .beginFill(B_TogCol)
+          shape.graphics.beginFill(B_TogCol)
               .drawRect(this.x-this.dw/2, this.y-this.h/2, this.dw, this.h);
         }
         shape.alpha = this.togState ? B_TogOnAlpha : B_TogOffAlpha;
       } 
+
       else if ( ( this.mode === ItemModeBiTog ) || ( this.mode === ItemModeBiTogLR ) ) {
-        // Bi Toggle items - needs ShapeVis as well - here we create the click capture
+        // Bi Toggle items - needs ShapeVis as well - here we create the click capture with a fixed black, barely visible mask
         if ( this.h === 0 ) {
-          shape.graphics
-              .beginFill("black")
+          shape.graphics.beginFill("black")
               .drawCircle(this.x, this.y, this.dw / 2);
         }
         else {
-          shape.graphics
-              .beginFill("black")
+          shape.graphics.beginFill("black")
               .drawRect(this.x-this.dw/2, this.y-this.h/2, this.dw, this.h);
         }
         shape.alpha = 0.01; // almost invisible mouse catcher - invisible is not tracked by the library
       } 
+
       else if ( ( this.mode === ItemModeAnalog ) || ( this.mode === ItemModeSlider ) ) {
         // Analog and Slider controls - needs ShapeVis as well - here we create the click capture
         if ( ( this.h === 0 ) || ( this.dw === 0 ) ) {
           // cannot create an element where w or h are zero - create an error one
-          shape.graphics
-              .beginFill("red") // ERROR MARKER
+          shape.graphics.beginFill("red") // ERROR MARKER
               .drawRect(this.x, this.y, 100, 100);
           shape.alpha = 1.0;
         }
         else {
           this.alogHorizontal = (this.dw > this.h); // direction depends on larger extent
-            shape.graphics
-                .beginFill("black") // fixed color - should be barely visible..
+            shape.graphics.beginFill("black") // click capture, fixed color - should be barely visible..
                 .drawRect(this.x-this.dw/2, this.y-this.h/2, this.dw, this.h);
         }
         shape.alpha = 0.01; // almost invisible mouse catcher - invisible is not tracked by the library
       }
+
       else {
         // everything else
         if ( this.h === 0 ) {
           // Circle
-          shape.graphics
-              .beginFill(B_UpDownCol)
+          shape.graphics.beginFill(B_UpDownCol)
               .drawCircle( this.x, this.y, this.dw / 2 );
         }
         else {
           // Rectangle
-          shape.graphics
-              .beginFill(B_UpDownCol)
+          shape.graphics.beginFill(B_UpDownCol)
               .drawRect( this.x-this.dw/2, this.y-this.h/2, this.dw, this.h );
         }
         shape.alpha = B_UpAlpha;
       }
+
       shape.name = this.name;
       this.shape = shape;
     }
@@ -320,19 +384,19 @@ class Target {
       var shapeVis = new createjs.Shape();
       if ( ( this.mode === ItemModeBiTog ) || ( this.mode === ItemModeBiTogLR ) ) {
         this.shapeVis = shapeVis;
-        this.SetCurrentBiTog(); // use toggle state method
+        this.SetCurrentBiTog(); // use toggle state method to set it
         return shapeVis;
       }
 
       else if ( ( this.mode === ItemModeAnalog ) ) {
         // unhide from 0.. Setpoint
         if ( this.alogHorizontal ) {
-          var ext = this.codeVal * this.dw / 1000.0;
+          var ext = this.codeVal * this.dw / A_Scale;
           shapeVis.graphics.beginFill(A_AnalogCol)
               .drawRect( this.x-this.dw/2+ext, this.y-this.h/2, this.dw - ext, this.h ); // right cover
         }
         else {
-          var ext = this.codeVal * this.h / 1000.0;
+          var ext = this.codeVal * this.h / A_Scale;
           ext = this.h - ext; // bottom up value increase
           shapeVis.graphics.beginFill(A_AnalogCol)
               .drawRect( this.x-this.dw/2, this.y-this.h/2, this.dw, ext ); // upper cover
@@ -342,16 +406,17 @@ class Target {
         this.shapeVis = shapeVis;
         return shapeVis;
       }
+
       else if ( ( this.mode === ItemModeSlider ) ) {
         // unhide the Handle 
         if ( this.alogHorizontal ) {
-          var ext = this.codeVal * this.dw / 1000.0;
+          var ext = this.codeVal * this.dw / A_Scale;
           shapeVis.graphics.beginFill(A_SliderCol)
               .drawRect( this.x-this.dw/2+ext+A_SliderHandleWidth_px, this.y-this.h/2, this.dw - ext-A_SliderHandleWidth_px, this.h ) // right cover
               .drawRect( this.x-this.dw/2, this.y-this.h/2, ext-A_SliderHandleWidth_px, this.h ); // left cover
         }
         else {
-          var ext = this.codeVal * this.h / 1000.0;
+          var ext = this.codeVal * this.h / A_Scale;
           ext = this.h - ext; // bottom up value increase
           shapeVis.graphics
               .beginFill(A_SliderCol)
@@ -363,6 +428,7 @@ class Target {
         this.shapeVis = shapeVis;
         return shapeVis;
       }
+
       else {
         return null;
       }
@@ -370,7 +436,7 @@ class Target {
     return this.shapeVis;
   }
 
-  // sets the current bi-color toggle maksing shape
+  // sets the current bi-color toggle masking shape
   SetCurrentBiTog ( ) {
     if (this.shapeVis === null) return;
     if ( ( this.mode === ItemModeBiTog ) ) {
@@ -396,6 +462,7 @@ class Target {
         this.shapeVis.alpha = B_TogOffAlpha;
       }
     }
+
     else if ( ( this.mode === ItemModeBiTogLR ) ) {
       if ( this.togState===true ){
         if ( this.h === 0 ) { // ON - circle cover left
@@ -430,47 +497,40 @@ class Target {
     
     if ( this.alogHorizontal ) {
       var localX = stageX - this.x + this.dw/2;  // get local extent
-      this.codeVal = localX  * 1000 / this.dw;   // change coord to analog value range
+      this.codeVal = localX  * A_Scale / this.dw;   // change coord to analog value range
       this.codeVal = (this.codeVal < 0 ) ? 0 : this.codeVal;        // Math.Min(..)
-      this.codeVal = (this.codeVal > 1000 ) ? 1000 : this.codeVal;  // Math.Max(..)
-      localX = this.codeVal * this.dw / 1000.0; // recalc GUI coord to never over/under shoot
+      this.codeVal = (this.codeVal > A_Scale ) ? A_Scale : this.codeVal;  // Math.Max(..)
+      localX = this.codeVal * this.dw / A_Scale; // recalc GUI coord to never over/under shoot
       // draw cover around the setpoint
       if ( this.mode === ItemModeAnalog ) {
         // unhide from 0.. Setpoint
-        this.shapeVis.graphics
-            .clear()
-            .beginFill(A_AnalogCol)
+        this.shapeVis.graphics.clear().beginFill(A_AnalogCol)
             .drawRect( this.x-this.dw/2+localX, this.y-this.h/2, this.dw-localX, this.h );
       }
       else if ( this.mode === ItemModeSlider ) {
         // unhide the Handle 
-        this.shapeVis.graphics
-            .clear()
-            .beginFill(A_SliderCol)
+        this.shapeVis.graphics.clear().beginFill(A_SliderCol)
             .drawRect( this.x-this.dw/2+localX+A_SliderHandleWidth_px, this.y-this.h/2, this.dw-localX-A_SliderHandleWidth_px, this.h )
             .drawRect( this.x-this.dw/2, this.y-this.h/2, localX-A_SliderHandleWidth_px, this.h );
       }
     }
-    else {
+
+    else { // vertical
       var localY = stageY - this.y + this.h/2;  // get local extent
-      this.codeVal = localY * 1000 / this.h ;   // change coord to analog value range
+      this.codeVal = localY * A_Scale / this.h ;   // change coord to analog value range
       this.codeVal = (this.codeVal < 0 ) ? 0 : this.codeVal;        // Math.Min(..)
-      this.codeVal = (this.codeVal > 1000 ) ? 1000 : this.codeVal;  // Math.Max(..)
-      this.codeVal = 1000 - this.codeVal;       // bottom up value increase
-      localY = this.h - (this.codeVal * this.h / 1000.0); // recalc GUI coord to never over/under shoot
+      this.codeVal = (this.codeVal > A_Scale ) ? A_Scale : this.codeVal;  // Math.Max(..)
+      this.codeVal = A_Scale - this.codeVal;       // bottom up value increase
+      localY = this.h - (this.codeVal * this.h / A_Scale); // recalc GUI coord to never over/under shoot
       // draw cover around the setpoint
       if ( this.mode === ItemModeAnalog ) {
         // unhide from 0.. Setpoint
-        this.shapeVis.graphics
-            .clear()
-            .beginFill(A_AnalogCol)
+        this.shapeVis.graphics.clear().beginFill(A_AnalogCol)
             .drawRect( this.x-this.dw/2, this.y-this.h/2, this.dw, localY ); // bottom up drawing
         }
       else if ( this.mode === ItemModeSlider ) {
         // unhide the Handle 
-        this.shapeVis.graphics
-            .clear()
-            .beginFill(A_SliderCol)
+        this.shapeVis.graphics.clear().beginFill(A_SliderCol)
             .drawRect( this.x-this.dw/2, this.y-this.h/2, this.dw, localY-A_SliderHandleWidth_px ) // bottom up drawing
             .drawRect( this.x-this.dw/2, this.y-this.h/2+localY+A_SliderHandleWidth_px, this.dw, this.h - localY-A_SliderHandleWidth_px ); // lower cover
           }
@@ -523,6 +583,7 @@ class Target {
         this.shape.alpha = this.togState ? B_TogOnAlpha : B_TogOffAlpha;
         cmd = this.GetCommand( CmdModeTap );
       }
+      // The Event dispatch
       var xmlhttp = new XMLHttpRequest();
       xmlhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
@@ -534,20 +595,21 @@ class Target {
     }
 
     else if ( evt.type == "pressmove") {
-      // analog control only
+      // analog/slider controls only
       if ( ( this.mode === ItemModeAnalog ) || ( this.mode === ItemModeSlider )){
         // GUI change for analog control while moving 
         this.SetCurrentALogExtent( evt.stageX, evt.stageY );
         cmd = this.GetCommand( CmdModePress );
+        // The Event dispatch
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function () {
+          if (this.readyState == 4 && this.status == 200) {
+            document.getElementById("debug").innerHTML = this.responseText; // DEBUG ONLY
+          }
+        };
+        xmlhttp.open("GET", 'calludp.php?msg=' + cmd.str + '&ip=' + IP + '&p=' + PORT.toString(), true);
+        xmlhttp.send();
       } 
-      var xmlhttp = new XMLHttpRequest();
-      xmlhttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-          document.getElementById("debug").innerHTML = this.responseText; // DEBUG ONLY
-        }
-      };
-      xmlhttp.open("GET", 'calludp.php?msg=' + cmd.str + '&ip=' + IP + '&p=' + PORT.toString(), true);
-      xmlhttp.send();
     }
 
     else if ((evt.type == "pressup") || (this.pressed && (evt.type == "mouseout"))) {
@@ -564,11 +626,11 @@ class Target {
       // this will find out if it was a PR or toggle key, button
       cmd = this.GetCommand( CmdModeRelease );
       if ( cmd.cMode === CmdModeTap ) return; // tap (toggle and axis, sliders) types don't have a release action 
-
+      // The Event dispatch
       var xmlhttp = new XMLHttpRequest();
       xmlhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
-          document.getElementById("debug").innerHTML = this.responseText; // DEBUG ONLY
+          document.getElementById("debug").innerHTML = this.responseText; // @@@DEBUG ONLY , COMMENT OUT TO REMOVE showing cmds 
         }
       };
       xmlhttp.open("GET", 'calludp.php?msg=' + cmd.str + '&ip=' + IP + '&p=' + PORT.toString(), true);
@@ -624,13 +686,11 @@ class Display {
       if ( ( this.mode === DispModeTogOn ) || ( this.mode === DispModeTogOff ) ) {
         // Toggle items
         if ( this.h === 0 ) {
-          shape.graphics
-              .beginFill(D_TogCol)
+          shape.graphics.beginFill(D_TogCol)
               .drawCircle(this.x, this.y, this.dw / 2);
         }
         else {
-          shape.graphics
-              .beginFill(D_TogCol)
+          shape.graphics.beginFill(D_TogCol)
               .drawRect(this.x-this.dw/2, this.y-this.h/2, this.dw, this.h);
         }
         shape.alpha = (this.mode===DispModeTogOn) ? D_TogOnAlpha : D_TogOffAlpha;
@@ -643,34 +703,32 @@ class Display {
       else if ( this.mode === DispModeSig ) {
         // Signal items
         if ( this.h === 0 ) {
-          shape.graphics
-              .beginFill(this.color)
+          shape.graphics.beginFill(this.color)
               .drawCircle(this.x, this.y, this.dw / 2);
         }
         else {
-          shape.graphics
-              .beginFill(this.color)
+          shape.graphics.beginFill(this.color)
               .drawRect(this.x-this.dw/2, this.y-this.h/2, this.dw, this.h);
         }
         shape.alpha = D_SigOffAlpha; // default off
       } 
+
       else if ( ( this.mode === DispModeAnalog ) || ( this.mode === DispModeSlider ) ) {
         // Analog and Slider display
         if ( ( this.h === 0 ) || ( this.dw === 0 ) ) {
           // cannot create an element where w or h are zero - create an error one
-          shape.graphics
-              .beginFill("red") // ERROR MARKER
+          shape.graphics.beginFill("red") // ERROR MARKER
               .drawRect(this.x, this.y, 100, 100);
           shape.alpha = 1.0;
         }
         else {
           this.alogHorizontal = (this.dw > this.h); // direction depends on larger extent
-            shape.graphics
-                .beginFill( (this.mode===DispModeSlider) ? D_SliderCol : D_AnalogCol )
+            shape.graphics.beginFill( (this.mode===DispModeSlider) ? D_SliderCol : D_AnalogCol )
                 .drawRect(this.x-this.dw/2, this.y-this.h/2, this.dw, this.h);
         }
         shape.alpha = D_SliderAlpha;
       }
+
       else {
         // everything else get no shape
         shape = null;
@@ -710,6 +768,7 @@ class Display {
         this.shapeVis.alpha = D_TogOffAlpha;
       }
     }
+
     else if ( ( this.mode === ItemModeBiTogLR ) ) {
       if ( value===true ){
         if ( this.h === 0 ) { // ON - circle cover left
@@ -744,42 +803,35 @@ class Display {
 
     // cut to range
     var localVal = (value < 0 ) ? 0 : value;        // Math.Min(..)
-    localVal = (localVal > 100 ) ? 100 : localVal;  // Math.Max(..)
+    localVal = (localVal > D_Scale ) ? D_Scale : localVal;  // Math.Max(..)
 
     if ( this.alogHorizontal ) {
-      var localX = localVal * this.dw / 100.0; // recalc GUI coord to never over/under shoot
+      var localX = localVal * this.dw / D_Scale; // recalc GUI coord to never over/under shoot
       // draw cover around the setpoint
       if ( this.mode === DispModeAnalog ) {
         // unhide from 0.. Setpoint
-        this.shapeVis.graphics
-            .clear()
-            .beginFill(D_AnalogCol)
+        this.shapeVis.graphics.clear().beginFill(D_AnalogCol)
             .drawRect( this.x-this.dw/2+localX, this.y-this.h/2, this.dw-localX, this.h );
       }
       else if ( this.mode === DispModeSlider ) {
         // unhide the Handle 
-        this.shapeVis.graphics
-            .clear()
-            .beginFill(D_SliderCol)
+        this.shapeVis.graphics.clear().beginFill(D_SliderCol)
             .drawRect( this.x-this.dw/2+localX+D_SliderHandleWidth_px, this.y-this.h/2, this.dw-localX-D_SliderHandleWidth_px, this.h )
             .drawRect( this.x-this.dw/2, this.y-this.h/2, localX-D_SliderHandleWidth_px, this.h );
       }
     }
+
     else {
-      var localY = this.h - (localVal * this.h / 100.0); // recalc GUI coord to never over/under shoot
+      var localY = this.h - (localVal * this.h / D_Scale); // recalc GUI coord to never over/under shoot
       // draw cover around the setpoint
       if ( this.mode === DispModeAnalog ) {
         // unhide from 0.. Setpoint
-        this.shapeVis.graphics
-            .clear()
-            .beginFill(D_AnalogCol)
+        this.shapeVis.graphics.clear().beginFill(D_AnalogCol)
             .drawRect( this.x-this.dw/2, this.y-this.h/2, this.dw, localY ); // bottom up drawing
         }
       else if ( this.mode === DispModeSlider ) {
         // unhide the Handle 
-        this.shapeVis.graphics
-            .clear()
-            .beginFill(D_SliderCol)
+        this.shapeVis.graphics.clear().beginFill(D_SliderCol)
             .drawRect( this.x-this.dw/2, this.y-this.h/2, this.dw, localY-D_SliderHandleWidth_px ) // bottom up drawing
             .drawRect( this.x-this.dw/2, this.y-this.h/2+localY+D_SliderHandleWidth_px, this.dw, this.h - localY-D_SliderHandleWidth_px ); // lower cover
           }
@@ -858,6 +910,7 @@ class Display {
 
 }// Display
 
+
 // *********************************************************************
 // Page_Base_obj  Object
 // An object that defines and handles the Page_Base  
@@ -906,7 +959,7 @@ class Page_Base_obj {
       //shape.on("click", this.Items_HandleEvent, null, false, this );
       //shape.on("dblclick", this.Items_HandleEvent, null, false, this );
 
-      // Analog and Sliders have an additional visual shape
+      // Analog, Sliders BiToggles have an additional visual shape
       var shapeVis = this.GetShapeVis(i);
       if ( shapeVis !== null) {
         shape.on("pressmove", this.Items_HandleEvent, null, false, this); // for analog controls
@@ -1078,7 +1131,6 @@ class Page_Base_obj {
   }
 
 }// class
-
 
 
 

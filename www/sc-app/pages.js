@@ -15,12 +15,14 @@
  * 
  * tItems: an array of Target objects to manage the interaction
  *
- *    name:   uniqueID of the object (make sure it is unique within the page)    
+ *    name:   uniqueID of the object (make sure it is unique within the page)
+ *              Using the same name across the pages will maintain ONE state for this target
+ *              i.e. the named Toggle, Slider, Analog will have only one state value for all pages
  *    target: x, y, dw, h
  *            circles and rectangles are supported 
  *            where x, y are the center coords of the shape
- *            circle    set h=0  and dw=diameter
- *            rectangle set h=height and dw=width            
+  *             circle    set h=0  and dw=diameter
+ *              rectangle set h=height and dw=width            
  *    type:   Keystroke / vJoy Button action
  *              ItemTypeKey, ItemTypeButton  
  *            Axis, RotAxis and Slider actions:
@@ -50,8 +52,8 @@
  *    target: x, y, dw, h
  *            currently only circles and rectangles are supported 
  *            where x, y are the center coords of the shape
- *            circle    set h=0  and dw=diameter
- *            rectangle set h=height and dw=width            
+ *              circle    set h=0  and dw=diameter
+ *              rectangle set h=height and dw=width            
  *    mode:   Data Display mode
  *              DispModeTxt      Text type (text is shown either string or value)
  *                               Note: For Text the x,y define the location, where the alignment is then around x,y i.e.
@@ -73,6 +75,7 @@
  *    item:    The data source item within the section  (section.item)
  */
 
+ 
 // the vJoy Command Server IP
 const IP = '192.168.1.69';
 // the vJoy Command Server PORT (UDP protocol)
@@ -166,14 +169,14 @@ const page_1_obj = new Page_Base_obj(
     new Target("tg7", 400, 250, 100, 0, ItemTypeButton, ItemModeBiTog,  8, ItemKModNone), // toggles with the button8
     new Target("tg8", 250, 350, 100, 70, ItemTypeButton, ItemModeBiTogLR,  9, ItemKModNone), // toggles with the button9
     // analog X axis simulation with 5 ticks from 0..max
-    new Target("ax0", 1250, 100, 90, 0, ItemTypeXaxis, ItemModeVal, 1000, ItemKModNone),
-    new Target("ax1", 1250, 200, 90, 0, ItemTypeXaxis, ItemModeVal,  750, ItemKModNone),
-    new Target("ax2", 1250, 300, 90, 0, ItemTypeXaxis, ItemModeVal,  500, ItemKModNone),
-    new Target("ax3", 1250, 400, 90, 0, ItemTypeXaxis, ItemModeVal,  250, ItemKModNone),
-    new Target("ax4", 1250, 500, 90, 0, ItemTypeXaxis, ItemModeVal,    0, ItemKModNone),
-
-    new Target("al1", 1150, 300, 100, 500, ItemTypeXaxis, ItemModeAnalog,   500, ItemKModNone), // analog control
-    new Target("sl1",  850, 650, 500, 94, ItemTypeYaxis, ItemModeSlider,   250, ItemKModNone), // slider control
+    new Target("ax0", 1250, 100, 90, 0, ItemTypeXaxis, ItemModeVal, 1000, ItemKModNone), // send 1000 as value
+    new Target("ax1", 1250, 200, 90, 0, ItemTypeXaxis, ItemModeVal,  750, ItemKModNone), // send  750 as value
+    new Target("ax2", 1250, 300, 90, 0, ItemTypeXaxis, ItemModeVal,  500, ItemKModNone), // send  500 as value
+    new Target("ax3", 1250, 400, 90, 0, ItemTypeXaxis, ItemModeVal,  250, ItemKModNone), // send  250 as value
+    new Target("ax4", 1250, 500, 90, 0, ItemTypeXaxis, ItemModeVal,    0, ItemKModNone), // send    0 as value
+    // Analog and Slider type target
+    new Target("al1", 1150, 300, 100, 500, ItemTypeXaxis, ItemModeAnalog,   500, ItemKModNone), // analog control, init 500 (middle scale)
+    new Target("sl1",  850, 650, 500, 94, ItemTypeYaxis, ItemModeSlider,   250, ItemKModNone), // slider control, init 250 (1/4 scale)
   ],
   // Data Display Items
   [
