@@ -1,6 +1,6 @@
 "use strict";
 //
-// V 1.7
+// V 1.8
 // Base Code for the Page handling
 // !!!! Everything changed here affects all pages 
 // Mods are available but use the myPages_Init() function for this
@@ -17,6 +17,7 @@
 // 20190111 - V 1.5 add display toggles, signals, analog (bars) and sliders
 // 20190117 - V 1.6 add 'BiColor' toggles for activation and display
 // 20190119 - V 1.7 add global state to support value sharing accross pages (same target name)
+// 20190119 - V 1.8 add multiple SCvJoyServer support (adds joystick index to PORT const)
 
 // Debug support
 //  Find the @@@DEBUG comment below in XMLHttpRequest and comment the complete line to remove the text output to the HTML page
@@ -186,17 +187,19 @@ class InternalState {
 // IN: mode :         Item modes
 // IN: codeVal :      int
 // IN: kbMod :        Keystroke modifiers
+// IN: jsIndex:       Joystick index
 class Target {
-  constructor(name, x, y, dw, h, type, mode, codeVal, kMod = ItemKModNone) {
+  constructor(name, x, y, dw, h, type, mode, codeVal, kMod = ItemKModNone, jsIndex=0) {
     // properties
-    this.name = name; // Unique ID
-    this.x = x; // Hit Target Center X
-    this.y = y; // Hit Target Center X
-    this.dw = dw; // Hit Target Diameter or width
-    this.h = h; // Hit Target height if 0 => circle and dw is d(iameter)
-    this.type = type; // ItemType..
-    this.mode = mode; // ItemMode..
-    this.kMod = kMod; // ItemKMod
+    this.name = name;   // Unique page ID - also reference for shared state object across pages
+    this.x = x;         // Hit Target Center X
+    this.y = y;         // Hit Target Center X
+    this.dw = dw;       // Hit Target Diameter or width
+    this.h = h;         // Hit Target height if 0 => circle and dw is d(iameter)
+    this.type = type;   // ItemType..
+    this.mode = mode;   // ItemMode..
+    this.kMod = kMod;   // ItemKMod
+    this.js = jsIndex;  // Joystick Index - selects the UDP port by adding the index to the PORT variable
     // internal vars
     this.shape = null;    // the event capture item
     this.shapeVis = null; // an additional shape for visualization only
@@ -590,7 +593,7 @@ class Target {
           document.getElementById("debug").innerHTML = this.responseText; // DEBUG ONLY
         }
       };
-      xmlhttp.open("GET", 'calludp.php?msg=' + cmd.str + '&ip=' + IP + '&p=' + PORT.toString(), true);
+      xmlhttp.open("GET", 'calludp.php?msg=' + cmd.str + '&ip=' + IP + '&p=' + (PORT+this.js).toString(), true);
       xmlhttp.send();
     }
 
@@ -607,7 +610,7 @@ class Target {
             document.getElementById("debug").innerHTML = this.responseText; // DEBUG ONLY
           }
         };
-        xmlhttp.open("GET", 'calludp.php?msg=' + cmd.str + '&ip=' + IP + '&p=' + PORT.toString(), true);
+        xmlhttp.open("GET", 'calludp.php?msg=' + cmd.str + '&ip=' + IP + '&p=' + (PORT+this.js).toString(), true);
         xmlhttp.send();
       } 
     }
@@ -633,7 +636,7 @@ class Target {
           document.getElementById("debug").innerHTML = this.responseText; // @@@DEBUG ONLY , COMMENT OUT TO REMOVE showing cmds 
         }
       };
-      xmlhttp.open("GET", 'calludp.php?msg=' + cmd.str + '&ip=' + IP + '&p=' + PORT.toString(), true);
+      xmlhttp.open("GET", 'calludp.php?msg=' + cmd.str + '&ip=' + IP + '&p=' + (PORT+this.js).toString(), true);
       xmlhttp.send();
     }
   }

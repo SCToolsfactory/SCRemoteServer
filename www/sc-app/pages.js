@@ -42,15 +42,17 @@
  *    code:   any VK_ name for Keys (see command.js) 
  *            the button index 1.. max for vJoy Buttons
  *            a 0 .. 1000 value for axis, rotaxis and sliders
- *    kMod:    ItemKModNone, ItemKModLCtrl, ItemKModRCtrl, ItemKModLAlt, ItemKModRAlt, ItemKModLShift, ItemKModRShift  - Key modifier
- *            for buttons targets use ItemKModNone
- * 
+ *    kMod:   Optional (default=ItemKModNone)
+ *              ItemKModNone, ItemKModLCtrl, ItemKModRCtrl, ItemKModLAlt, ItemKModRAlt, ItemKModLShift, ItemKModRShift  - Key modifier
+ *              for buttons targets use ItemKModNone
+ *    jsIndex: Optional (default=0)
+ *              Joystick index - selects the UDP channel for the SCvJoyServer (used UDP port = PORT + jsIndex)
  * 
  * dItems: an array of Data Display objects
  *
  *    name:   uniqueID of the object (make sure it is unique within the page)    
  *    target: x, y, dw, h
- *            currently only circles and rectangles are supported 
+ *            circles and rectangles are supported 
  *            where x, y are the center coords of the shape
  *              circle    set h=0  and dw=diameter
  *              rectangle set h=height and dw=width            
@@ -78,13 +80,13 @@
  
 // the vJoy Command Server IP
 const IP = '192.168.1.69';
-// the vJoy Command Server PORT (UDP protocol)
+// the vJoy Command Server First Port number (UDP protocol)
 const PORT = 34123;
 
 // data file to capture content from, located in and loaded from webRoot/data
 const DATAFILE = "sc-app.json";
 
-// Some 'consts' to be overwritten here - called at the very beginning
+// Some preset variables to be overwritten here - called at the very beginning
 // also other user init should be done here
 function  myPages_Init() 
 {
@@ -177,6 +179,9 @@ const page_1_obj = new Page_Base_obj(
     // Analog and Slider type target
     new Target("al1", 1150, 300, 100, 500, ItemTypeXaxis, ItemModeAnalog,   500, ItemKModNone), // analog control, init 500 (middle scale)
     new Target("sl1",  850, 650, 500, 94, ItemTypeYaxis, ItemModeSlider,   250, ItemKModNone), // slider control, init 250 (1/4 scale)
+
+    // Issue a command for the Joystick with index 1 if the SCvJoyServer has more than one UDP channels (Joysticks) opened
+     //new Target("my99", 100, 100, 90, 0,  , ItemModePR, 17, ItemKModNone, 1), // optional parameter jsIndex=1 (default = 0)
   ],
   // Data Display Items
   [
