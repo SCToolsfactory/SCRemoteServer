@@ -22,3 +22,6 @@ minified source.
 # license
 The libraries are ©2017 gskinner.com, inc., and made available under the highly permissive MIT open source software 
 license. See the source file header for the full license text.
+
+Also contains the 'compiled' sources created by Babel
+So we can use older browsers such as iOS 9.3 Safari.. on the old iPad

@@ -16,6 +16,7 @@ Then it should run when issuing:<br>
 Or running the 'run-server.ps1' powershell script from the installation root<br>
 <br>
 New with 2.0: ability to issue Macros for Touch type targets<br>
+Update with 2.0: Using Babel to 'compile' for older browsers (iOS 9.3 Safari included)<br>
 Update with 2.0: a lot but only internal part - pages.js needs rework (see provided examples)<br>
 <br>
 Uses the UDP protocol to supply commands issued from the remote Web Browser<br>
