@@ -1,0 +1,16 @@
+{
+  "name": "scremotesvr",
+  "version": "1.0.0",
+  "description": "SC Remote Server",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Martin Burri",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "sanitize-filename": "^1.6.2"
+  }
+}

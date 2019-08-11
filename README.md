@@ -1,4 +1,4 @@
-SCremoteServer V 1.8<br>
+SCremoteServer V 2.0<br>
 ====================<br>
 <br>
 SC Remote Interaction Web Server <br>
@@ -6,6 +6,17 @@ SC Remote Interaction Web Server <br>
 A small Web Site that utilizes the SCvJoyServer to issue keystrokes and vJoy commands.<br>
 (SC) refers to the StarCitzen game which is the primary intent of this project, but it may <br>
 be used for other purposes as well.<br>
+<br>
+New with 2.0: the WebServer is included (NodeJS, express)<br>
+Install Node.JS  (https://nodejs.org/en/download/)<br>
+Issue in e.g. powershell (Windows)<br>
+<code>$ npm install express sanitize-filename</code><br>
+Then it should run when issuing:<br>
+<code>$ npm run start</code><br>
+Or running the 'run-server.ps1' powershell script from the installation root<br>
+<br>
+New with 2.0: ability to issue Macros for Touch type targets<br>
+Update with 2.0: a lot but only internal part - pages.js needs rework (see provided examples)<br>
 <br>
 Uses the UDP protocol to supply commands issued from the remote Web Browser<br>
 which may run on a tablet or similar interactive device appart from the game PC<br>
@@ -21,7 +32,8 @@ NEW: This version supports real-time display of data available from a json file 
 The upload can be automated using SCJoyServer which now carries a web uploader.<br>
 For more information - see doc.<br>
 <br>
-Uses: easelJS library - see license file
+Uses: easelJS library - see license file<br>
+Uses: NodeJS, express, sanitize-filename library (via download)<br>
 <br>
 Note: <br>
 You have to install the SCvJoyServer which is available here:<br>

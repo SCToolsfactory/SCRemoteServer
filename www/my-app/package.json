@@ -1,0 +1,19 @@
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "author": "Martin Burri",
+  "license": "MIT",
+  "scripts": {
+    "build": "babel src -d lib",
+    "build-min": "babel ../src -d ../lib --presets minify --no-comments"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.5.5",
+    "@babel/core": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "babel-preset-minify": "^0.5.0"
+  },
+  "dependencies": {
+    "core-js": "^3.1.4"
+  }
+}

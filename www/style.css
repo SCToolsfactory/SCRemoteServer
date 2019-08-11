@@ -1,0 +1,48 @@
+/*
+ * Styles used by the express WebServer to show the default page 
+ * Config at will...
+ */
+body
+{
+	position:relative;
+	background-color: rgb(15, 4, 44);		
+	font-family:"Trebuchet MS", Verdana;
+	font-size: 12pt;
+	text-align: left;
+	margin: 0px;
+	padding: 0px;
+}
+
+.mainblock
+{
+	padding:50px;
+	border : solid 1px #DDDDDD;	
+	background-color: #F5F5F5;
+	width:798px;
+	text-align:left;
+}
+
+a
+{
+	color: #014579;
+	font-weight: bold;
+	text-decoration: none;	
+}
+
+.afolder
+{
+	color: #014579;
+	font-weight:bold;
+	font-size: 16pt;
+	text-decoration: none;	
+	background: url(./?getimg=folder) no-repeat left;
+    padding-left:30px;
+}
+
+hr
+{
+	color: #DDDDDD;
+	background-color: #DDDDDD;
+	height: 1px;
+	border: 0;
+}

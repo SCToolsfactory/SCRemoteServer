@@ -26,3 +26,7 @@ easelJS
 The libraries are ©2017 gskinner.com, inc., and made available under the highly 
 permissive MIT open source software license. 
 See the source file header for the full license text.
+
+------------------------------------------------------------------------------
+Node.JS, express, sanitize-filename see corresponding owners
+however such code is not included in this repository...

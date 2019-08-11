@@ -29,6 +29,11 @@ $RECYCLE.BIN/
 Icon
 
 
+# Node js
+node_modules/
+package-lock.json
+
+
 # Thumbnails
 ._*
 
@@ -36,7 +41,6 @@ Icon
 .Spotlight-V100
 .Trashes
 
-.DS_Store
 #################
 ## Eclipse
 #################
