@@ -10,7 +10,10 @@
   "author": "Martin Burri",
   "license": "MIT",
   "dependencies": {
+    "body-parser": "^1.19.0",
     "express": "^4.17.1",
+    "express-formidable": "^1.2.0",
+    "fs-extra": "^8.1.0",
     "sanitize-filename": "^1.6.2"
   }
 }

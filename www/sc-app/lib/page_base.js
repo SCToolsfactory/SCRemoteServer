@@ -576,7 +576,7 @@ var Target = function () {
         }
       };
 
-      xmlhttp.open("GET", '/calludp/ip/' + Dom.IP + '/port/' + port.toString() + '/msg/' + cmdStr, true);
+      xmlhttp.open("GET", '/api/calludp/ip/' + Dom.IP + '/port/' + port.toString() + '/msg/' + cmdStr, true);
       xmlhttp.send();
     }
   }, {
@@ -1071,7 +1071,7 @@ var Page_proto_obj = function () {
           }
         };
 
-        xmlhttp.open("GET", '/filequery/file/' + Dom.DATAFILE, true);
+        xmlhttp.open("GET", '/api/filequery/file/' + Dom.DATAFILE, true);
         xmlhttp.send();
       }
     }

@@ -717,8 +717,8 @@ class Target {
           document.getElementById("debug").innerHTML = this.responseText; // @@@DEBUG ONLY
         }
       };
-//      xmlhttp.open("GET", 'script/calludp.php?msg=' + cmdStr + '&ip=' + Dom.IP + '&p=' + port.toString(), true);
-      xmlhttp.open("GET", '/calludp/ip/'+Dom.IP+'/port/'+port.toString()+'/msg/'+ cmdStr , true);
+      // see main.js on how the udp request is expected
+      xmlhttp.open("GET", '/api/calludp/ip/'+Dom.IP+'/port/'+port.toString()+'/msg/'+ cmdStr , true);
       xmlhttp.send();
   }
   
@@ -1313,7 +1313,8 @@ class Page_proto_obj {
             self.UpdateAllDisplayItems(evt, self);
           }
         };
-        xmlhttp.open("GET", '/filequery/file/' + Dom.DATAFILE ,true);
+        // see main.js on how the query is expected
+        xmlhttp.open("GET", '/api/filequery/file/' + Dom.DATAFILE ,true);
         xmlhttp.send();
       }
   }
