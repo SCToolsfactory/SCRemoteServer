@@ -9,8 +9,8 @@ be used for other purposes as well.<br>
 <br>
 New with 2.0: the WebServer is included (NodeJS, express)<br>
 Install Node.JS  (https://nodejs.org/en/download/)<br>
-Issue in e.g. powershell (Windows)<br>
-<code>$ npm install express sanitize-filename</code><br>
+Issue in e.g. powershell (Windows) change to install folder<br>
+<code>$ npm install</code><br>
 Then it should run when issuing:<br>
 <code>$ npm run start</code><br>
 Or running the 'run-server.ps1' powershell script from the installation root<br>
@@ -34,7 +34,7 @@ The upload can be automated using SCJoyServer which now carries a web uploader.<
 For more information - see doc.<br>
 <br>
 Uses: easelJS library - see license file<br>
-Uses: NodeJS, express, sanitize-filename library (via download)<br>
+Uses: NodeJS, node modules via download - see package-json for dependencies<br>
 <br>
 Note: <br>
 You have to install the SCvJoyServer which is available here:<br>
